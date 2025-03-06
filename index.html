@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabela Interativa</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+    <script>
+        let data = [];
+        let filteredData = [];
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+                data = sheet;
+                filteredData = data.slice(1);
+                renderTable();
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function applyFilter() {
+            const filterValue = document.getElementById("tagFilter").value.toLowerCase();
+            filteredData = data.slice(1).filter(row => row[1] && row[1].toString().toLowerCase().includes(filterValue));
+            renderTable();
+        }
+
+        function openEditModal(index) {
+            document.getElementById("editModal").style.display = "block";
+            document.getElementById("editIndex").value = index;
+            document.getElementById("dataRomaneio").value = filteredData[index][12] || "";
+            document.getElementById("qtdeEnviada").value = filteredData[index][13] || "";
+            document.getElementById("obsRomaneio").value = filteredData[index][14] || "";
+            document.getElementById("qtde").innerText = filteredData[index][15] || "";
+            document.getElementById("saldo").innerText = filteredData[index][16] || "";
+        }
+
+        function saveEdit() {
+            var index = document.getElementById("editIndex").value;
+            filteredData[index][12] = document.getElementById("dataRomaneio").value;
+            filteredData[index][13] = document.getElementById("qtdeEnviada").value;
+            filteredData[index][14] = document.getElementById("obsRomaneio").value;
+            document.getElementById("editModal").style.display = "none";
+            renderTable();
+        }
+
+        function renderTable() {
+            var table = document.getElementById("dataTable");
+            table.innerHTML = "";
+
+            if (data.length === 0) return;
+
+            var thead = document.createElement("thead");
+            var headerRow = document.createElement("tr");
+            data[0].forEach(header => {
+                var th = document.createElement("th");
+                th.innerText = header;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            var tbody = document.createElement("tbody");
+            for (var j = 0; j < filteredData.length; j++) {
+                var tr = document.createElement("tr");
+                tr.onclick = (function(index) {
+                    return function() { openEditModal(index); };
+                })(j);
+                filteredData[j].forEach(cell => {
+                    var td = document.createElement("td");
+                    td.innerText = cell;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            }
+            table.appendChild(tbody);
+        }
+    </script>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid black; padding: 5px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid black; }
+    </style>
+</head>
+<body>
+    <h2>Carregar e Editar Tabela</h2>
+    <input type="file" id="fileInput" onchange="handleFile(event)">
+    <br><br>
+    <label>Filtrar por TAG: <input type="text" id="tagFilter" onkeyup="applyFilter()"></label>
+    <br><br>
+    <table id="dataTable"></table>
+
+    <div id="editModal" class="modal">
+        <h3>Editar Registro</h3>
+        <input type="hidden" id="editIndex">
+        <label>Data do Romaneio: <input type="text" id="dataRomaneio"></label><br>
+        <label>QTDE Enviada: <input type="text" id="qtdeEnviada"></label><br>
+        <label>OBS Romaneio: <input type="text" id="obsRomaneio"></label><br>
+        <p>QTDE: <span id="qtde"></span></p>
+        <p>Saldo: <span id="saldo"></span></p>
+        <button onclick="saveEdit()">Salvar</button>
+        <button onclick="document.getElementById('editModal').style.display='none'">Fechar</button>
+    </div>
+</body>
+</html>
