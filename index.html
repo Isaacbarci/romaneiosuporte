@@ -34,7 +34,7 @@
 <body>
     <h2>Carregar e Editar Tabela com QR Code</h2>
     <input type="file" id="fileInput" onchange="handleFile(event)">
-    <input type="text" id="identificacaoFilter" placeholder="Filtrar por Identificação" onkeyup="applyFilter()">
+    <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR Code" onkeyup="applyFilter()">
     <button onclick="downloadExcel()">Download Excel</button>
     <button onclick="startQrScanner()">Escanear QR Code</button>
     <div id="qr-reader" style="width:300px; margin-top:10px;"></div>
@@ -54,12 +54,14 @@
         let filteredData = [];
         let editedRows = new Set();
         let qrScanner;
+        let qrColumnIndex = -1;
 
         document.addEventListener("DOMContentLoaded", () => {
             const storedData = localStorage.getItem("uploadedData");
             if (storedData) {
                 data = JSON.parse(storedData);
                 filteredData = data.slice(1);
+                findQrColumn();
                 renderTable();
             }
         });
@@ -74,10 +76,18 @@
                 localStorage.setItem("uploadedData", JSON.stringify(data));
                 filteredData = data.slice(1);
                 editedRows.clear();
+                findQrColumn();
                 renderTable();
             };
             reader.readAsBinaryString(file);
-        };
+        }
+
+        function findQrColumn() {
+            qrColumnIndex = data[0].indexOf("QR");
+            if (qrColumnIndex === -1) {
+                alert("A coluna 'QR' não foi encontrada no arquivo.");
+            }
+        }
 
         function renderTable() {
             const table = document.getElementById("dataTable");
@@ -110,14 +120,16 @@
 
         function applyFilter() {
             const filterVal = document.getElementById("identificacaoFilter").value.toLowerCase();
-            const idColumnIndex = data[0].indexOf("Identificação") !== -1 ? data[0].indexOf("Identificação") : 2;
-            filteredData = data.slice(1).filter(row => row[idColumnIndex] && row[idColumnIndex].toString().toLowerCase().includes(filterVal));
+            if (qrColumnIndex === -1) return;
+
+            filteredData = data.slice(1).filter(row => row[qrColumnIndex] && row[qrColumnIndex].toString().toLowerCase().includes(filterVal));
             renderTable();
         }
 
         function startQrScanner() {
             if (qrScanner) qrScanner.stop();
             qrScanner = new Html5Qrcode("qr-reader");
+
             qrScanner.start({ facingMode: "environment" }, {
                 fps: 10, qrbox: 250
             }, (qrCodeMessage) => {
@@ -128,7 +140,6 @@
         }
 
         function openEditModal(index) {
-            const idColumnIndex = data[0].indexOf("Identificação") !== -1 ? data[0].indexOf("Identificação") : 2;
             document.getElementById("DATADOROMANEIO").value = filteredData[index][data[0].indexOf("DATA DO ROMANEIO")] || "";
             document.getElementById("QTDEENVIADA").value = filteredData[index][data[0].indexOf("QTDE ENVIADA")] || "";
             document.getElementById("OBSROMANEIO").value = filteredData[index][data[0].indexOf("OBS ROMANEIO")] || "";
