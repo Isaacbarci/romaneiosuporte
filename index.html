@@ -18,52 +18,73 @@
             text-align: left;
         }
         td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
-        .modal {
+        .modal, #qr-container {
             display: none;
             position: fixed;
-            top: 100px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translate(-50%, -50%);
             background: #fff;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            flex-direction: column;
-            gap: 8px;
             z-index: 1000;
+            width: 300px;
+            text-align: center;
+        }
+        .modal input, .modal button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+        .close-btn {
+            background: red;
+            color: white;
+            border: none;
+        }
+        .save-btn {
+            background: green;
+            color: white;
+            border: none;
         }
         .edited-row {
-            background-color: #d4fcd4 !important;
+            background-color: lightblue !important;
         }
     </style>
 </head>
 <body>
     <h2>Carregar e Editar Tabela com QR Code</h2>
     <input type="file" id="fileInput" onchange="handleFile(event)">
-    <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR ou Identificação 1" onkeyup="applyFilter()">
+    <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR ou Identificação" onkeyup="applyFilter()">
     <button onclick="downloadExcel()">Download Excel</button>
     <button onclick="startQrScanner()">Escanear QR Code</button>
-    <div id="qr-reader" style="width:300px; margin-top:10px;"></div>
+
+    <div id="qr-container">
+        <div id="qr-reader" style="width:300px; margin-top:10px;"></div>
+        <button class="close-btn" onclick="stopQrScanner()">Fechar Scanner</button>
+    </div>
+
     <table id="dataTable"></table>
 
     <div id="editModal" class="modal">
         <input type="hidden" id="editIndex">
-        <label>DATA DO ROMANEIO: <input type="date" id="DATADOROMANEIO"></label>
-        <label>QTD ENVIADA: <input type="text" id="QTDENVIADA"></label>
-        <label>OBS ROMANEIO: <input type="text" id="OBSROMANEIO"></label>
+        <label>Data do Romaneio: <input type="date" id="DATADOROMANEIO"></label>
+        <label>Qtd Enviada: <input type="text" id="QTDENVIADA"></label>
+        <label>Obs Romaneio: <input type="text" id="OBSROMANEIO"></label>
         <label>Qtde: <input type="text" id="Qtde" readonly></label>
         <label>Saldo: <input type="text" id="Saldo" readonly></label>
-        <button onclick="saveEdit()">Salvar</button>
-        <button onclick="document.getElementById('editModal').style.display='none'">Fechar</button>
+        <button class="save-btn" onclick="saveEdit()">Salvar</button>
+        <button class="close-btn" onclick="closeModal()">Fechar</button>
     </div>
 
     <script>
         let data = [];
         let filteredData = [];
-        let editedRows = new Set();
         let columnIndexes = {};
+        let editedRows = new Set();
+        let qrScanner;
 
-        // Lista de colunas a serem ocultadas
         const hiddenColumns = [
             "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
             "área superfície", "data corte", "data acoplamento", "data solda",
@@ -74,17 +95,10 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             const storedData = localStorage.getItem("uploadedData");
-            const storedEditedRows = localStorage.getItem("editedRows");
-
             if (storedData) {
                 data = JSON.parse(storedData);
                 filteredData = data.slice(1);
                 findColumnIndexes();
-
-                if (storedEditedRows) {
-                    editedRows = new Set(JSON.parse(storedEditedRows));
-                }
-
                 renderTable();
             }
         });
@@ -99,8 +113,6 @@
                 localStorage.setItem("uploadedData", JSON.stringify(data));
                 filteredData = data.slice(1);
                 findColumnIndexes();
-                editedRows.clear();
-                localStorage.removeItem("editedRows");
                 renderTable();
             };
             reader.readAsBinaryString(file);
@@ -130,11 +142,9 @@
 
             filteredData.forEach((row, rowIndex) => {
                 const tr = table.insertRow();
-
                 if (editedRows.has(rowIndex)) {
                     tr.classList.add("edited-row");
                 }
-
                 tr.onclick = () => openEditModal(rowIndex);
                 row.forEach((cell, colIndex) => {
                     if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
@@ -147,14 +157,13 @@
 
         function openEditModal(index) {
             document.getElementById("editIndex").value = index;
-
             document.getElementById("DATADOROMANEIO").value = filteredData[index][columnIndexes["data do romaneio"]] || "";
             document.getElementById("QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
             document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
             document.getElementById("Qtde").value = filteredData[index][columnIndexes["qtde"]] || "N/A";
             document.getElementById("Saldo").value = filteredData[index][columnIndexes["saldo"]] || "N/A";
 
-            document.getElementById("editModal").style.display = "flex";
+            document.getElementById("editModal").style.display = "block";
         }
 
         function saveEdit() {
@@ -167,10 +176,60 @@
 
             editedRows.add(index);
             localStorage.setItem("uploadedData", JSON.stringify(data));
-            localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
 
             document.getElementById("editModal").style.display = "none";
             renderTable();
+        }
+
+        function closeModal() {
+            document.getElementById("editModal").style.display = "none";
+        }
+
+        function startQrScanner() {
+            document.getElementById("qr-container").style.display = "block";
+            qrScanner = new Html5Qrcode("qr-reader");
+            qrScanner.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: 250
+                },
+                (decodedText, decodedResult) => {
+                    document.getElementById("identificacaoFilter").value = decodedText;
+                    applyFilter();
+                    stopQrScanner();
+                },
+                (errorMessage) => {
+                    console.error(errorMessage);
+                }
+            ).catch((err) => {
+                console.error(err);
+            });
+        }
+
+        function stopQrScanner() {
+            if (qrScanner) {
+                qrScanner.stop().then(() => {
+                    document.getElementById("qr-container").style.display = "none";
+                }).catch((err) => {
+                    console.error(err);
+                });
+            }
+        }
+
+        function applyFilter() {
+            const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
+            filteredData = data.slice(1).filter(row => {
+                return row.some(cell => cell.toString().toLowerCase().includes(filterValue));
+            });
+            renderTable();
+        }
+
+        function downloadExcel() {
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            XLSX.writeFile(wb, "tabela_editada.xlsx");
         }
     </script>
 </body>
