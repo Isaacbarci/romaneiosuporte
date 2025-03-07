@@ -23,7 +23,7 @@
             font-size: 14px;
         }
         input[type="text"] {
-            width: 300px; /* Tamanho maior para o campo de filtro */
+            width: 300px;
         }
         button {
             background-color: #007BFF;
@@ -84,16 +84,35 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             z-index: 1000;
-            width: 300px;
-            text-align: center;
+            width: 320px;
+            text-align: left;
         }
-        .modal input, .modal button {
+        .modal label {
             display: block;
-            width: 100%;
             margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        .modal input {
+            width: 100%;
             padding: 8px;
             border-radius: 5px;
             border: 1px solid #ccc;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .modal input[readonly] {
+            background-color: #f9f9f9;
+            cursor: not-allowed;
+        }
+        .modal button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
         }
         .edited-row {
             background-color: lightblue !important;
@@ -116,6 +135,8 @@
 
     <div id="editModal" class="modal">
         <input type="hidden" id="editIndex">
+        <label>Posição / TAG: <input type="text" id="POSICAOTAG" readonly></label>
+        <label>Identificação 1: <input type="text" id="IDENTIFICACAO1" readonly></label>
         <label>Data do Romaneio: <input type="date" id="DATADOROMANEIO"></label>
         <label>Qtd Enviada: <input type="text" id="QTDENVIADA"></label>
         <label>Obs Romaneio: <input type="text" id="OBSROMANEIO"></label>
@@ -153,7 +174,6 @@
             const storedEditedRows = localStorage.getItem("editedRows");
             if (storedEditedRows) {
                 editedRows = new Set(JSON.parse(storedEditedRows));
-                // Aplica a classe `edited-row` às linhas editadas ao carregar a página
                 renderTable();
             }
         });
@@ -169,8 +189,8 @@
                 data = jsonData;
                 localStorage.setItem("uploadedData", JSON.stringify(data));
                 filteredData = data.slice(1);
-                editedRows.clear(); // Limpa o conjunto de linhas editadas
-                localStorage.removeItem("editedRows"); // Remove os índices das linhas editadas do localStorage
+                editedRows.clear();
+                localStorage.removeItem("editedRows");
                 findColumnIndexes();
                 renderTable();
             };
@@ -201,8 +221,8 @@
 
             filteredData.forEach((row, rowIndex) => {
                 const tr = table.insertRow();
-                const originalIndex = data.indexOf(row); // Mapeia o índice da linha filtrada para o índice original
-                if (editedRows.has(originalIndex)) { // Verifica se a linha foi editada
+                const originalIndex = data.indexOf(row);
+                if (editedRows.has(originalIndex)) {
                     tr.classList.add("edited-row");
                 }
                 tr.onclick = () => openEditModal(rowIndex);
@@ -216,8 +236,10 @@
         }
 
         function openEditModal(index) {
-            const originalIndex = data.indexOf(filteredData[index]); // Mapeia o índice da linha filtrada para o índice original
-            document.getElementById("editIndex").value = originalIndex; // Usa o índice original
+            const originalIndex = data.indexOf(filteredData[index]);
+            document.getElementById("editIndex").value = originalIndex;
+            document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "N/A";
+            document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "N/A";
             document.getElementById("DATADOROMANEIO").value = filteredData[index][columnIndexes["data do romaneio"]] || "";
             document.getElementById("QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
             document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
@@ -238,18 +260,15 @@
                 document.getElementById("OBSROMANEIO").value
             ];
 
-            // Verifica se houve alterações
             if (
                 originalRow[columnIndexes["data do romaneio"]] !== editedRow[0] ||
                 originalRow[columnIndexes["qtd enviada"]] !== editedRow[1] ||
                 originalRow[columnIndexes["obs romaneio"]] !== editedRow[2]
             ) {
-                // Atualiza os dados
                 data[originalIndex][columnIndexes["data do romaneio"]] = editedRow[0];
                 data[originalIndex][columnIndexes["qtd enviada"]] = editedRow[1];
                 data[originalIndex][columnIndexes["obs romaneio"]] = editedRow[2];
 
-                // Marca a linha como editada
                 editedRows.add(originalIndex);
                 localStorage.setItem("uploadedData", JSON.stringify(data));
                 localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
@@ -304,24 +323,15 @@
         }
 
         function downloadExcel() {
-            if (!workbook) return;
+            if (!data.length) {
+                alert("Nenhum dado carregado para exportar.");
+                return;
+            }
 
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const updatedData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
-
-            // Atualiza os dados no sheet com as edições feitas
-            data.forEach((row, rowIndex) => {
-                row.forEach((cell, colIndex) => {
-                    if (updatedData[rowIndex] && updatedData[rowIndex][colIndex] !== cell) {
-                        updatedData[rowIndex][colIndex] = cell;
-                    }
-                });
-            });
-
-            const updatedSheet = XLSX.utils.aoa_to_sheet(updatedData);
-            workbook.Sheets[workbook.SheetNames[0]] = updatedSheet;
-
-            XLSX.writeFile(workbook, "tabela_editada.xlsx");
+            const updatedSheet = XLSX.utils.aoa_to_sheet(data);
+            const newWorkbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
+            XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
         }
     </script>
 </body>
