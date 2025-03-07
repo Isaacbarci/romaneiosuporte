@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tabela Interativa com QR Code</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,7 +14,7 @@
         h2 {
             color: #333;
         }
-        input[type="file"], input[type="text"], button {
+        input[type="text"], button {
             margin: 5px;
             padding: 10px;
             border-radius: 5px;
@@ -35,22 +34,9 @@
         button:hover {
             background-color: #0056b3;
         }
-        .close-btn {
-            background-color: #dc3545;
-        }
-        .close-btn:hover {
-            background-color: #c82333;
-        }
-        .save-btn {
-            background-color: #28a745;
-        }
-        .save-btn:hover {
-            background-color: #218838;
-        }
         table {
             border-collapse: collapse;
             width: 100%;
-            overflow-x: auto;
             margin-top: 20px;
             background-color: white;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -63,138 +49,45 @@
         th {
             background-color: #007BFF;
             color: white;
-            white-space: normal;
-            word-wrap: break-word;
             text-align: left;
         }
         td {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            cursor: pointer;
-        }
-        .modal, #qr-container {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            width: 320px;
-            text-align: left;
-        }
-        .modal label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: #333;
-        }
-        .modal input {
-            width: 100%;
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-        .modal input[readonly] {
-            background-color: #f9f9f9;
-            cursor: not-allowed;
-        }
-        .modal button {
-            width: 100%;
-            padding: 10px;
-            border-radius: 5px;
-            border: none;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .edited-row {
-            background-color: lightblue !important;
         }
     </style>
 </head>
 <body>
     <h2>ROMANEIO DE SUPORTE</h2>
-    <input type="file" id="fileInput" onchange="handleFile(event)">
-    <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR ou Identificação" onkeyup="applyFilter()">
+    <input type="text" id="identificacaoFilter" placeholder="Filtrar por Identificação" onkeyup="applyFilter()">
     <button onclick="downloadExcel()">Download Excel</button>
-    <button onclick="startQrScanner()">Escanear QR Code</button>
-
-    <div id="qr-container">
-        <div id="qr-reader" style="width:300px; margin-top:10px;"></div>
-        <button class="close-btn" onclick="stopQrScanner()">Fechar Scanner</button>
-    </div>
-
     <table id="dataTable"></table>
-
-    <div id="editModal" class="modal">
-        <input type="hidden" id="editIndex">
-        <label>Posição / TAG: <input type="text" id="POSICAOTAG" readonly></label>
-        <label>Identificação 1: <input type="text" id="IDENTIFICACAO1" readonly></label>
-        <label>Data do Romaneio: <input type="date" id="DATADOROMANEIO"></label>
-        <label>Qtd Enviada: <input type="text" id="QTDENVIADA"></label>
-        <label>Obs Romaneio: <input type="text" id="OBSROMANEIO"></label>
-        <label>Qtde: <input type="text" id="Qtde" readonly></label>
-        <label>Saldo: <input type="text" id="Saldo" readonly></label>
-        <button class="save-btn" onclick="saveEdit()">Salvar</button>
-        <button class="close-btn" onclick="closeModal()">Fechar</button>
-    </div>
 
     <script>
         let data = [];
         let filteredData = [];
         let columnIndexes = {};
-        let editedRows = new Set();
-        let qrScanner;
         let workbook;
 
-        const hiddenColumns = [
-            "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
-            "área superfície", "data corte", "data acoplamento", "data solda",
-            "data jato/pintura", "número romaneio", "data romaneio", "data recebimento",
-            "observação", "area m²", "data cadastro", "rev", "prog. fab.", "executante", "linha", "spool",
-            "localização", "status", "peso", "qtde enviada", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id", "serviço"
-        ];
+        const excelFilePath = "romaneio.xlsx"; // Caminho do arquivo Excel
 
         document.addEventListener("DOMContentLoaded", () => {
-            const storedData = localStorage.getItem("uploadedData");
-            if (storedData) {
-                data = JSON.parse(storedData);
-                filteredData = data.slice(1);
-                findColumnIndexes();
-                renderTable();
-            }
-
-            const storedEditedRows = localStorage.getItem("editedRows");
-            if (storedEditedRows) {
-                editedRows = new Set(JSON.parse(storedEditedRows));
-                renderTable();
-            }
+            loadExcel();
         });
 
-        function handleFile(event) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const arrayBuffer = e.target.result;
-                workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
-                data = jsonData;
-                localStorage.setItem("uploadedData", JSON.stringify(data));
-                filteredData = data.slice(1);
-                editedRows.clear();
-                localStorage.removeItem("editedRows");
-                findColumnIndexes();
-                renderTable();
-            };
-            reader.readAsArrayBuffer(file);
+        function loadExcel() {
+            fetch(excelFilePath)
+                .then(response => response.arrayBuffer())
+                .then(arrayBuffer => {
+                    workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
+                    filteredData = data.slice(1);
+                    findColumnIndexes();
+                    renderTable();
+                })
+                .catch(error => console.error("Erro ao carregar o arquivo Excel:", error));
         }
 
         function findColumnIndexes() {
@@ -211,107 +104,19 @@
             if (!data.length) return;
 
             const headerRow = table.insertRow();
-            data[0].forEach((header, colIndex) => {
-                if (!hiddenColumns.includes(header.trim().toLowerCase())) {
-                    const th = document.createElement("th");
-                    th.textContent = header;
-                    headerRow.appendChild(th);
-                }
+            data[0].forEach((header) => {
+                const th = document.createElement("th");
+                th.textContent = header;
+                headerRow.appendChild(th);
             });
 
-            filteredData.forEach((row, rowIndex) => {
+            filteredData.forEach((row) => {
                 const tr = table.insertRow();
-                const originalIndex = data.indexOf(row);
-                if (editedRows.has(originalIndex)) {
-                    tr.classList.add("edited-row");
-                }
-                tr.onclick = () => openEditModal(rowIndex);
-                row.forEach((cell, colIndex) => {
-                    if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
-                        const td = tr.insertCell();
-                        td.textContent = cell;
-                    }
+                row.forEach((cell) => {
+                    const td = tr.insertCell();
+                    td.textContent = cell;
                 });
             });
-        }
-
-        function openEditModal(index) {
-            const originalIndex = data.indexOf(filteredData[index]);
-            document.getElementById("editIndex").value = originalIndex;
-            document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "N/A";
-            document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "N/A";
-            document.getElementById("DATADOROMANEIO").value = filteredData[index][columnIndexes["data do romaneio"]] || "";
-            document.getElementById("QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
-            document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
-            document.getElementById("Qtde").value = filteredData[index][columnIndexes["qtde"]] || "N/A";
-            document.getElementById("Saldo").value = filteredData[index][columnIndexes["saldo"]] || "N/A";
-
-            document.getElementById("editModal").style.display = "block";
-        }
-
-        function saveEdit() {
-            const originalIndex = parseInt(document.getElementById("editIndex").value);
-            if (originalIndex < 0) return;
-
-            const originalRow = data[originalIndex];
-            const editedRow = [
-                document.getElementById("DATADOROMANEIO").value,
-                document.getElementById("QTDENVIADA").value,
-                document.getElementById("OBSROMANEIO").value
-            ];
-
-            if (
-                originalRow[columnIndexes["data do romaneio"]] !== editedRow[0] ||
-                originalRow[columnIndexes["qtd enviada"]] !== editedRow[1] ||
-                originalRow[columnIndexes["obs romaneio"]] !== editedRow[2]
-            ) {
-                data[originalIndex][columnIndexes["data do romaneio"]] = editedRow[0];
-                data[originalIndex][columnIndexes["qtd enviada"]] = editedRow[1];
-                data[originalIndex][columnIndexes["obs romaneio"]] = editedRow[2];
-
-                editedRows.add(originalIndex);
-                localStorage.setItem("uploadedData", JSON.stringify(data));
-                localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
-            }
-
-            document.getElementById("editModal").style.display = "none";
-            renderTable();
-        }
-
-        function closeModal() {
-            document.getElementById("editModal").style.display = "none";
-        }
-
-        function startQrScanner() {
-            document.getElementById("qr-container").style.display = "block";
-            qrScanner = new Html5Qrcode("qr-reader");
-            qrScanner.start(
-                { facingMode: "environment" },
-                {
-                    fps: 10,
-                    qrbox: 250
-                },
-                (decodedText, decodedResult) => {
-                    document.getElementById("identificacaoFilter").value = decodedText;
-                    applyFilter();
-                    stopQrScanner();
-                },
-                (errorMessage) => {
-                    console.error(errorMessage);
-                }
-            ).catch((err) => {
-                console.error(err);
-            });
-        }
-
-        function stopQrScanner() {
-            if (qrScanner) {
-                qrScanner.stop().then(() => {
-                    document.getElementById("qr-container").style.display = "none";
-                }).catch((err) => {
-                    console.error(err);
-                });
-            }
         }
 
         function applyFilter() {
