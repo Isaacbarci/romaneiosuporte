@@ -17,6 +17,7 @@
                 const sheetName = workbook.SheetNames[0];
                 const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: "" });
                 data = sheet;
+                localStorage.setItem("uploadedData", JSON.stringify(data));
                 filteredData = data.slice(1);
                 renderTable();
             };
@@ -30,36 +31,46 @@
         }
 
         function openEditModal(index) {
-            document.getElementById("editModal").style.display = "block";
-            document.getElementById("editIndex").value = index;
-            document.getElementById("dataRomaneio").value = data[index + 1][12] ? formatDate(data[index + 1][12]) : "";
-            document.getElementById("qtdeEnviada").value = data[index + 1][13] || "";
-            document.getElementById("obsRomaneio").value = data[index + 1][14] || "";
-            document.getElementById("qtde").value = data[index + 1][15] || "0";
-            document.getElementById("saldo").value = data[index + 1][16] || "0";
-        }
-
-        function formatDate(dateValue) {
-            if (!dateValue) return "";
-            if (typeof dateValue === 'string' && dateValue.includes("/")) {
-                const parts = dateValue.split("/");
-                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            if (isNaN(index) || index < 0 || index >= filteredData.length) {
+                console.error("Erro: índice inválido.");
+                return;
             }
-            const date = new Date(dateValue);
-            if (isNaN(date.getTime())) return dateValue;
-            return date.toISOString().split('T')[0];
+            document.getElementById("editModal").style.display = "flex";
+            document.getElementById("editIndex").value = index;
+            document.getElementById("dataRomaneio").value = filteredData[index][12] || "";
+            document.getElementById("qtdeEnviada").value = filteredData[index][13] || "";
+            document.getElementById("obsRomaneio").value = filteredData[index][15] || "";
+            document.getElementById("qtde").value = filteredData[index][14] || "0";
+            document.getElementById("saldo").value = filteredData[index][16] || "0";
         }
 
         function saveEdit() {
-            var index = document.getElementById("editIndex").value;
-            data[index + 1][12] = document.getElementById("dataRomaneio").value;
-            data[index + 1][13] = document.getElementById("qtdeEnviada").value;
-            data[index + 1][14] = document.getElementById("obsRomaneio").value || '';
-            document.getElementById("editModal").style.display = "none";
+            var index = parseInt(document.getElementById("editIndex").value, 10);
+            if (index < 0 || index >= filteredData.length) {
+                console.error("Erro: índice inválido.");
+                return;
+            }
+
+            let originalIndex = index + 1;
+            data[originalIndex][12] = document.getElementById("dataRomaneio").value;
+            data[originalIndex][13] = document.getElementById("qtdeEnviada").value;
+            data[originalIndex][15] = document.getElementById("obsRomaneio").value;
+
+            filteredData[index][12] = data[originalIndex][12];
+            filteredData[index][13] = data[originalIndex][13];
+            filteredData[index][15] = data[originalIndex][15];
+
+            localStorage.setItem("uploadedData", JSON.stringify(data));
             renderTable();
+            document.getElementById("editModal").style.display = "none";
         }
 
         function renderTable() {
+            const storedData = localStorage.getItem("uploadedData");
+            if (storedData) {
+                data = JSON.parse(storedData);
+                filteredData = data.slice(1);
+            }
             var table = document.getElementById("dataTable");
             table.innerHTML = "";
 
@@ -92,6 +103,7 @@
         }
 
         function downloadExcel() {
+            localStorage.setItem("uploadedData", JSON.stringify(data));
             const ws = XLSX.utils.aoa_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Dados");
@@ -112,17 +124,22 @@
     <label>Filtrar por Identificação 1: <input type="text" id="identificacaoFilter" onkeyup="applyFilter()"></label>
     <br><br>
     <button onclick="downloadExcel()">Download Excel</button>
+
     <br><br>
     <table id="dataTable"></table>
 
     <div id="editModal" class="modal">
+        <div style="background: white; padding: 20px; border-radius: 8px; width: 400px;">
+
+        <div style="background: white; padding: 20px; border-radius: 8px; width: 400px;">
         <h3>Editar Registro</h3>
+
         <input type="hidden" id="editIndex">
         <label>DATA DO ROMANEIO: <input type="date" id="dataRomaneio"></label><br>
         <label>QTDE ENVIADA: <input type="text" id="qtdeEnviada"></label><br>
+        <label>QTDE: <input type="text" id="qtde" readonly></label><br>
+        <label>SALDO: <input type="text" id="saldo" readonly></label><br>
         <label>OBS ROMANEIO: <input type="text" id="obsRomaneio"></label><br>
-        <label>Qtde: <input type="text" id="qtde" readonly></label><br>
-        <label>Saldo: <input type="text" id="saldo" readonly></label><br>
         <button onclick="saveEdit()">Salvar</button>
         <button onclick="document.getElementById('editModal').style.display='none'">Fechar</button>
     </div>
