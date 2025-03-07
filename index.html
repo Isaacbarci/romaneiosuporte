@@ -7,7 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* Seu CSS permanece o mesmo */
+        /* Estilos CSS permanecem os mesmos */
     </style>
 </head>
 <body>
@@ -53,7 +53,6 @@
         ];
 
         document.addEventListener("DOMContentLoaded", () => {
-            // Carregar dados do localStorage, se existirem
             const storedData = localStorage.getItem("uploadedData");
             if (storedData) {
                 data = JSON.parse(storedData);
@@ -62,7 +61,6 @@
                 renderTable();
             }
 
-            // Carregar linhas editadas do localStorage, se existirem
             const storedEditedRows = localStorage.getItem("editedRows");
             if (storedEditedRows) {
                 editedRows = new Set(JSON.parse(storedEditedRows));
