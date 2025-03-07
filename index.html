@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tabela Interativa</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
     <script>
@@ -57,7 +57,7 @@
             const tbody = document.createElement("tbody");
             filteredData.forEach((row, rowIndex) => {
                 const tr = document.createElement("tr");
-                tr.onclick = () => openEditModal(rowIndex);
+                tr.onclick = (event) => openEditModal(rowIndex, event);
                 row.forEach((cell, columnIndex) => {
                     if (!hiddenColumns.includes(data[0][columnIndex])) {
                         const td = document.createElement("td");
@@ -87,11 +87,14 @@
             renderTable();
         }
 
-        function openEditModal(index) {
+        function openEditModal(index, event) {
             const modal = document.getElementById("editModal");
             if (!modal || isNaN(index) || index < 0 || index >= filteredData.length) return;
 
             modal.style.display = "flex";
+            modal.style.top = (event.clientY + window.scrollY + 10) + 'px';
+            modal.style.left = (event.clientX + window.scrollX - modal.offsetWidth / 2) + 'px';
+            modal.style.transform = 'translate(-50%, 0)';
             document.getElementById("editIndex").value = index;
             document.getElementById("dataRomaneio").value = filteredData[index][data[0].indexOf('DATA DO ROMANEIO')] || "";
             document.getElementById("qtdeEnviada").value = filteredData[index][data[0].indexOf('QTDE ENVIADA')] || "";
