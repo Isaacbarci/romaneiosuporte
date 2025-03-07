@@ -84,13 +84,14 @@
         let columnIndexes = {};
         let editedRows = new Set();
         let qrScanner;
+        let workbook;
 
         const hiddenColumns = [
             "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
             "área superfície", "data corte", "data acoplamento", "data solda",
             "data jato/pintura", "número romaneio", "data romaneio", "data recebimento",
             "observação", "area m²", "data cadastro", "rev", "prog. fab.", "executante", "linha", "spool",
-            "localização", "status", "peso", "qtde enviada", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id"
+            "localização", "status", "peso", "qtde enviada", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id", "serviço"
         ];
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -101,21 +102,30 @@
                 findColumnIndexes();
                 renderTable();
             }
+
+            const storedEditedRows = localStorage.getItem("editedRows");
+            if (storedEditedRows) {
+                editedRows = new Set(JSON.parse(storedEditedRows));
+            }
         });
 
         function handleFile(event) {
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.onload = (e) => {
-                const workbook = XLSX.read(e.target.result, { type: 'binary' });
-                const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" });
-                data = sheet;
+                const arrayBuffer = e.target.result;
+                workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
+                data = jsonData;
                 localStorage.setItem("uploadedData", JSON.stringify(data));
                 filteredData = data.slice(1);
+                editedRows.clear(); // Limpa o conjunto de linhas editadas
+                localStorage.removeItem("editedRows"); // Remove os índices das linhas editadas do localStorage
                 findColumnIndexes();
                 renderTable();
             };
-            reader.readAsBinaryString(file);
+            reader.readAsArrayBuffer(file);
         }
 
         function findColumnIndexes() {
@@ -176,6 +186,7 @@
 
             editedRows.add(index);
             localStorage.setItem("uploadedData", JSON.stringify(data));
+            localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows))); // Armazena os índices das linhas editadas
 
             document.getElementById("editModal").style.display = "none";
             renderTable();
@@ -226,10 +237,24 @@
         }
 
         function downloadExcel() {
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-            XLSX.writeFile(wb, "tabela_editada.xlsx");
+            if (!workbook) return;
+
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const updatedData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
+
+            // Atualiza os dados no sheet com as edições feitas
+            data.forEach((row, rowIndex) => {
+                row.forEach((cell, colIndex) => {
+                    if (updatedData[rowIndex] && updatedData[rowIndex][colIndex] !== cell) {
+                        updatedData[rowIndex][colIndex] = cell;
+                    }
+                });
+            });
+
+            const updatedSheet = XLSX.utils.aoa_to_sheet(updatedData);
+            workbook.Sheets[workbook.SheetNames[0]] = updatedSheet;
+
+            XLSX.writeFile(workbook, "tabela_editada.xlsx");
         }
     </script>
 </body>
