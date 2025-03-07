@@ -15,7 +15,7 @@
             reader.onload = function(e) {
                 const workbook = XLSX.read(e.target.result, { type: 'binary' });
                 const sheetName = workbook.SheetNames[0];
-                const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+                const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: "" });
                 data = sheet;
                 filteredData = data.slice(1);
                 renderTable();
@@ -24,26 +24,37 @@
         }
 
         function applyFilter() {
-            const filterValue = document.getElementById("tagFilter").value.toLowerCase();
-            filteredData = data.slice(1).filter(row => row[1] && row[1].toString().toLowerCase().includes(filterValue));
+            const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
+            filteredData = data.slice(1).filter(row => row[2] && row[2].toString().toLowerCase().includes(filterValue));
             renderTable();
         }
 
         function openEditModal(index) {
             document.getElementById("editModal").style.display = "block";
             document.getElementById("editIndex").value = index;
-            document.getElementById("dataRomaneio").value = filteredData[index][12] || "";
-            document.getElementById("qtdeEnviada").value = filteredData[index][13] || "";
-            document.getElementById("obsRomaneio").value = filteredData[index][14] || "";
-            document.getElementById("qtde").innerText = filteredData[index][15] || "";
-            document.getElementById("saldo").innerText = filteredData[index][16] || "";
+            document.getElementById("dataRomaneio").value = data[index + 1][12] ? formatDate(data[index + 1][12]) : "";
+            document.getElementById("qtdeEnviada").value = data[index + 1][13] || "";
+            document.getElementById("obsRomaneio").value = data[index + 1][14] || "";
+            document.getElementById("qtde").value = data[index + 1][15] || "0";
+            document.getElementById("saldo").value = data[index + 1][16] || "0";
+        }
+
+        function formatDate(dateValue) {
+            if (!dateValue) return "";
+            if (typeof dateValue === 'string' && dateValue.includes("/")) {
+                const parts = dateValue.split("/");
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            const date = new Date(dateValue);
+            if (isNaN(date.getTime())) return dateValue;
+            return date.toISOString().split('T')[0];
         }
 
         function saveEdit() {
             var index = document.getElementById("editIndex").value;
-            filteredData[index][12] = document.getElementById("dataRomaneio").value;
-            filteredData[index][13] = document.getElementById("qtdeEnviada").value;
-            filteredData[index][14] = document.getElementById("obsRomaneio").value;
+            data[index + 1][12] = document.getElementById("dataRomaneio").value;
+            data[index + 1][13] = document.getElementById("qtdeEnviada").value;
+            data[index + 1][14] = document.getElementById("obsRomaneio").value || '';
             document.getElementById("editModal").style.display = "none";
             renderTable();
         }
@@ -79,6 +90,13 @@
             }
             table.appendChild(tbody);
         }
+
+        function downloadExcel() {
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Dados");
+            XLSX.writeFile(wb, "dados_editados.xlsx");
+        }
     </script>
     <style>
         table { border-collapse: collapse; width: 100%; }
@@ -91,18 +109,20 @@
     <h2>Carregar e Editar Tabela</h2>
     <input type="file" id="fileInput" onchange="handleFile(event)">
     <br><br>
-    <label>Filtrar por TAG: <input type="text" id="tagFilter" onkeyup="applyFilter()"></label>
+    <label>Filtrar por Identificação 1: <input type="text" id="identificacaoFilter" onkeyup="applyFilter()"></label>
+    <br><br>
+    <button onclick="downloadExcel()">Download Excel</button>
     <br><br>
     <table id="dataTable"></table>
 
     <div id="editModal" class="modal">
         <h3>Editar Registro</h3>
         <input type="hidden" id="editIndex">
-        <label>Data do Romaneio: <input type="text" id="dataRomaneio"></label><br>
-        <label>QTDE Enviada: <input type="text" id="qtdeEnviada"></label><br>
-        <label>OBS Romaneio: <input type="text" id="obsRomaneio"></label><br>
-        <p>QTDE: <span id="qtde"></span></p>
-        <p>Saldo: <span id="saldo"></span></p>
+        <label>DATA DO ROMANEIO: <input type="date" id="dataRomaneio"></label><br>
+        <label>QTDE ENVIADA: <input type="text" id="qtdeEnviada"></label><br>
+        <label>OBS ROMANEIO: <input type="text" id="obsRomaneio"></label><br>
+        <label>Qtde: <input type="text" id="qtde" readonly></label><br>
+        <label>Saldo: <input type="text" id="saldo" readonly></label><br>
         <button onclick="saveEdit()">Salvar</button>
         <button onclick="document.getElementById('editModal').style.display='none'">Fechar</button>
     </div>
