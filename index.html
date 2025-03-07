@@ -152,7 +152,7 @@
 
             filteredData.forEach((row, rowIndex) => {
                 const tr = table.insertRow();
-                if (editedRows.has(rowIndex)) {
+                if (editedRows.has(rowIndex + 1)) { // Verifica se a linha foi editada
                     tr.classList.add("edited-row");
                 }
                 tr.onclick = () => openEditModal(rowIndex);
@@ -180,13 +180,29 @@
             const index = parseInt(document.getElementById("editIndex").value);
             if (index < 0) return;
 
-            data[index + 1][columnIndexes["data do romaneio"]] = document.getElementById("DATADOROMANEIO").value;
-            data[index + 1][columnIndexes["qtd enviada"]] = document.getElementById("QTDENVIADA").value;
-            data[index + 1][columnIndexes["obs romaneio"]] = document.getElementById("OBSROMANEIO").value;
+            const originalRow = filteredData[index];
+            const editedRow = [
+                document.getElementById("DATADOROMANEIO").value,
+                document.getElementById("QTDENVIADA").value,
+                document.getElementById("OBSROMANEIO").value
+            ];
 
-            editedRows.add(index);
-            localStorage.setItem("uploadedData", JSON.stringify(data));
-            localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows))); // Armazena os índices das linhas editadas
+            // Verifica se houve alterações
+            if (
+                originalRow[columnIndexes["data do romaneio"]] !== editedRow[0] ||
+                originalRow[columnIndexes["qtd enviada"]] !== editedRow[1] ||
+                originalRow[columnIndexes["obs romaneio"]] !== editedRow[2]
+            ) {
+                // Atualiza os dados
+                data[index + 1][columnIndexes["data do romaneio"]] = editedRow[0];
+                data[index + 1][columnIndexes["qtd enviada"]] = editedRow[1];
+                data[index + 1][columnIndexes["obs romaneio"]] = editedRow[2];
+
+                // Marca a linha como editada
+                editedRows.add(index + 1); // +1 porque a primeira linha é o cabeçalho
+                localStorage.setItem("uploadedData", JSON.stringify(data));
+                localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
+            }
 
             document.getElementById("editModal").style.display = "none";
             renderTable();
