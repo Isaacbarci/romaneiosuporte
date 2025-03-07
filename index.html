@@ -199,7 +199,8 @@
 
             filteredData.forEach((row, rowIndex) => {
                 const tr = table.insertRow();
-                if (editedRows.has(rowIndex + 1)) { // Verifica se a linha foi editada
+                const originalIndex = data.indexOf(row); // Mapeia o índice da linha filtrada para o índice original
+                if (editedRows.has(originalIndex)) { // Verifica se a linha foi editada
                     tr.classList.add("edited-row");
                 }
                 tr.onclick = () => openEditModal(rowIndex);
@@ -213,7 +214,8 @@
         }
 
         function openEditModal(index) {
-            document.getElementById("editIndex").value = index;
+            const originalIndex = data.indexOf(filteredData[index]); // Mapeia o índice da linha filtrada para o índice original
+            document.getElementById("editIndex").value = originalIndex; // Usa o índice original
             document.getElementById("DATADOROMANEIO").value = filteredData[index][columnIndexes["data do romaneio"]] || "";
             document.getElementById("QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
             document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
@@ -224,10 +226,10 @@
         }
 
         function saveEdit() {
-            const index = parseInt(document.getElementById("editIndex").value);
-            if (index < 0) return;
+            const originalIndex = parseInt(document.getElementById("editIndex").value);
+            if (originalIndex < 0) return;
 
-            const originalRow = filteredData[index];
+            const originalRow = data[originalIndex];
             const editedRow = [
                 document.getElementById("DATADOROMANEIO").value,
                 document.getElementById("QTDENVIADA").value,
@@ -241,12 +243,12 @@
                 originalRow[columnIndexes["obs romaneio"]] !== editedRow[2]
             ) {
                 // Atualiza os dados
-                data[index + 1][columnIndexes["data do romaneio"]] = editedRow[0];
-                data[index + 1][columnIndexes["qtd enviada"]] = editedRow[1];
-                data[index + 1][columnIndexes["obs romaneio"]] = editedRow[2];
+                data[originalIndex][columnIndexes["data do romaneio"]] = editedRow[0];
+                data[originalIndex][columnIndexes["qtd enviada"]] = editedRow[1];
+                data[originalIndex][columnIndexes["obs romaneio"]] = editedRow[2];
 
                 // Marca a linha como editada
-                editedRows.add(index + 1); // +1 porque a primeira linha é o cabeçalho
+                editedRows.add(originalIndex);
                 localStorage.setItem("uploadedData", JSON.stringify(data));
                 localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
             }
