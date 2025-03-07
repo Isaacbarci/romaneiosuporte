@@ -153,6 +153,8 @@
             const storedEditedRows = localStorage.getItem("editedRows");
             if (storedEditedRows) {
                 editedRows = new Set(JSON.parse(storedEditedRows));
+                // Aplica a classe `edited-row` às linhas editadas ao carregar a página
+                renderTable();
             }
         });
 
