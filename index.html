@@ -92,8 +92,8 @@
             if (!modal || isNaN(index) || index < 0 || index >= filteredData.length) return;
 
             modal.style.display = "flex";
-            modal.style.top = (event.clientY + window.scrollY + 10) + 'px';
-            modal.style.left = (event.clientX + window.scrollX - modal.offsetWidth / 2) + 'px';
+            modal.style.top = '100px';
+            modal.style.left = '50%';
             modal.style.transform = 'translate(-50%, 0)';
             document.getElementById("editIndex").value = index;
             document.getElementById("dataRomaneio").value = filteredData[index][data[0].indexOf('DATA DO ROMANEIO')] || "";
