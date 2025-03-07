@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tabela Interativa com QR Code</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,9 +35,22 @@
         button:hover {
             background-color: #0056b3;
         }
+        .close-btn {
+            background-color: #dc3545;
+        }
+        .close-btn:hover {
+            background-color: #c82333;
+        }
+        .save-btn {
+            background-color: #28a745;
+        }
+        .save-btn:hover {
+            background-color: #218838;
+        }
         table {
             border-collapse: collapse;
             width: 100%;
+            overflow-x: auto;
             margin-top: 20px;
             background-color: white;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -55,22 +69,47 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            cursor: pointer;
+        }
+        .modal, #qr-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            width: 320px;
+            text-align: left;
+        }
+        .edited-row {
+            background-color: lightblue !important;
         }
     </style>
 </head>
 <body>
     <h2>ROMANEIO DE SUPORTE</h2>
-    <input type="text" id="identificacaoFilter" placeholder="Filtrar por Identificação" onkeyup="applyFilter()">
+    <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR ou Identificação" onkeyup="applyFilter()">
     <button onclick="downloadExcel()">Download Excel</button>
+    <button onclick="startQrScanner()">Escanear QR Code</button>
+
+    <div id="qr-container">
+        <div id="qr-reader" style="width:300px; margin-top:10px;"></div>
+        <button class="close-btn" onclick="stopQrScanner()">Fechar Scanner</button>
+    </div>
+
     <table id="dataTable"></table>
 
     <script>
         let data = [];
         let filteredData = [];
         let columnIndexes = {};
+        let qrScanner;
         let workbook;
-
-        const excelFilePath = "romaneio.xlsx"; // Caminho do arquivo Excel
+        const excelFilePath = "romaneio.xlsx"; // Arquivo Excel que será carregado automaticamente
 
         document.addEventListener("DOMContentLoaded", () => {
             loadExcel();
@@ -125,6 +164,35 @@
                 return row.some(cell => cell.toString().toLowerCase().includes(filterValue));
             });
             renderTable();
+        }
+
+        function startQrScanner() {
+            document.getElementById("qr-container").style.display = "block";
+            qrScanner = new Html5Qrcode("qr-reader");
+            qrScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 250 },
+                (decodedText) => {
+                    document.getElementById("identificacaoFilter").value = decodedText;
+                    applyFilter();
+                    stopQrScanner();
+                },
+                (errorMessage) => {
+                    console.error(errorMessage);
+                }
+            ).catch((err) => {
+                console.error(err);
+            });
+        }
+
+        function stopQrScanner() {
+            if (qrScanner) {
+                qrScanner.stop().then(() => {
+                    document.getElementById("qr-container").style.display = "none";
+                }).catch((err) => {
+                    console.error(err);
+                });
+            }
         }
 
         function downloadExcel() {
