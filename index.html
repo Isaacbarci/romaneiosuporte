@@ -7,9 +7,59 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 10px; }
-        table { border-collapse: collapse; width: 100%; overflow-x: auto; }
-        th, td { border: 1px solid #ccc; padding: 4px 6px; font-size: 11px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h2 {
+            color: #333;
+        }
+        input[type="file"], input[type="text"], button {
+            margin: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        input[type="text"] {
+            width: 300px; /* Tamanho maior para o campo de filtro */
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .close-btn {
+            background-color: #dc3545;
+        }
+        .close-btn:hover {
+            background-color: #c82333;
+        }
+        .save-btn {
+            background-color: #28a745;
+        }
+        .save-btn:hover {
+            background-color: #218838;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
         th {
             background-color: #007BFF;
             color: white;
@@ -17,7 +67,12 @@
             word-wrap: break-word;
             text-align: left;
         }
-        td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+        td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
         .modal, #qr-container {
             display: none;
             position: fixed;
@@ -27,7 +82,7 @@
             background: #fff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             z-index: 1000;
             width: 300px;
             text-align: center;
@@ -36,17 +91,9 @@
             display: block;
             width: 100%;
             margin-bottom: 10px;
-            padding: 5px;
-        }
-        .close-btn {
-            background: red;
-            color: white;
-            border: none;
-        }
-        .save-btn {
-            background: green;
-            color: white;
-            border: none;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
         }
         .edited-row {
             background-color: lightblue !important;
