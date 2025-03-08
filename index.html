@@ -7,11 +7,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* Estilos permanecem os mesmos */
+        /* Estilos mantidos iguais */
     </style>
 </head>
 <body>
     <h2>ROMANEIO DE SUPORTE</h2>
+    <input type="file" id="fileInput" onchange="handleFile(event)">
     <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR ou Identificação" onkeyup="applyFilter()">
     <button onclick="downloadExcel()">Download Excel</button>
     <button onclick="startQrScanner()">Escanear QR Code</button>
@@ -59,22 +60,6 @@
                 filteredData = data.slice(1);
                 findColumnIndexes();
                 renderTable();
-            } else {
-                // Carregar o arquivo diretamente
-                fetch('romaneio.xlsx')
-                    .then(response => response.arrayBuffer())
-                    .then(arrayBuffer => {
-                        workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
-                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
-                        data = jsonData;
-                        localStorage.setItem("uploadedData", JSON.stringify(data));
-                        filteredData = data.slice(1);
-                        editedRows.clear();
-                        localStorage.removeItem("editedRows");
-                        findColumnIndexes();
-                        renderTable();
-                    });
             }
 
             const storedEditedRows = localStorage.getItem("editedRows");
@@ -84,7 +69,161 @@
             }
         });
 
-        // Restante do código permanece o mesmo
+        function handleFile(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const arrayBuffer = e.target.result;
+                workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
+                data = jsonData;
+                localStorage.setItem("uploadedData", JSON.stringify(data));
+                filteredData = data.slice(1);
+                editedRows.clear();
+                localStorage.removeItem("editedRows");
+                findColumnIndexes();
+                renderTable();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function findColumnIndexes() {
+            columnIndexes = {};
+            data[0].forEach((header, index) => {
+                columnIndexes[header.trim().toLowerCase()] = index;
+            });
+        }
+
+        function renderTable() {
+            const table = document.getElementById("dataTable");
+            table.innerHTML = "";
+
+            if (!data.length) return;
+
+            const headerRow = table.insertRow();
+            data[0].forEach((header, colIndex) => {
+                if (!hiddenColumns.includes(header.trim().toLowerCase())) {
+                    const th = document.createElement("th");
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                }
+            });
+
+            filteredData.forEach((row, rowIndex) => {
+                const tr = table.insertRow();
+                const originalIndex = data.indexOf(row);
+                if (editedRows.has(originalIndex)) {
+                    tr.classList.add("edited-row");
+                }
+                tr.onclick = () => openEditModal(rowIndex);
+                row.forEach((cell, colIndex) => {
+                    if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
+                        const td = tr.insertCell();
+                        td.textContent = cell;
+                    }
+                });
+            });
+        }
+
+        function openEditModal(index) {
+            const originalIndex = data.indexOf(filteredData[index]);
+            document.getElementById("editIndex").value = originalIndex;
+            document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "N/A";
+            document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "N/A";
+            document.getElementById("DATADOROMANEIO").value = filteredData[index][columnIndexes["data do romaneio"]] || "";
+            document.getElementById("QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
+            document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
+            document.getElementById("Qtde").value = filteredData[index][columnIndexes["qtde"]] || "N/A";
+            document.getElementById("Saldo").value = filteredData[index][columnIndexes["saldo"]] || "N/A";
+
+            document.getElementById("editModal").style.display = "block";
+        }
+
+        function saveEdit() {
+            const originalIndex = parseInt(document.getElementById("editIndex").value);
+            if (originalIndex < 0) return;
+
+            const originalRow = data[originalIndex];
+            const editedRow = [
+                document.getElementById("DATADOROMANEIO").value,
+                document.getElementById("QTDENVIADA").value,
+                document.getElementById("OBSROMANEIO").value
+            ];
+
+            if (
+                originalRow[columnIndexes["data do romaneio"]] !== editedRow[0] ||
+                originalRow[columnIndexes["qtd enviada"]] !== editedRow[1] ||
+                originalRow[columnIndexes["obs romaneio"]] !== editedRow[2]
+            ) {
+                data[originalIndex][columnIndexes["data do romaneio"]] = editedRow[0];
+                data[originalIndex][columnIndexes["qtd enviada"]] = editedRow[1];
+                data[originalIndex][columnIndexes["obs romaneio"]] = editedRow[2];
+
+                editedRows.add(originalIndex);
+                localStorage.setItem("uploadedData", JSON.stringify(data));
+                localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
+            }
+
+            document.getElementById("editModal").style.display = "none";
+            renderTable();
+        }
+
+        function closeModal() {
+            document.getElementById("editModal").style.display = "none";
+        }
+
+        function startQrScanner() {
+            document.getElementById("qr-container").style.display = "block";
+            qrScanner = new Html5Qrcode("qr-reader");
+            qrScanner.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: 250
+                },
+                (decodedText, decodedResult) => {
+                    document.getElementById("identificacaoFilter").value = decodedText;
+                    applyFilter();
+                    stopQrScanner();
+                },
+                (errorMessage) => {
+                    console.error(errorMessage);
+                }
+            ).catch((err) => {
+                console.error(err);
+            });
+        }
+
+        function stopQrScanner() {
+            if (qrScanner) {
+                qrScanner.stop().then(() => {
+                    document.getElementById("qr-container").style.display = "none";
+                }).catch((err) => {
+                    console.error(err);
+                });
+            }
+        }
+
+        function applyFilter() {
+            const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
+            filteredData = data.slice(1).filter(row => {
+                return row.some(cell => cell.toString().toLowerCase().includes(filterValue));
+            });
+            renderTable();
+        }
+
+        function downloadExcel() {
+            if (!data.length) {
+                alert("Nenhum dado carregado para exportar.");
+                return;
+            }
+
+            const updatedSheet = XLSX.utils.aoa_to_sheet(data);
+            const newWorkbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
+            XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
+        }
     </script>
 </body>
 </html>
