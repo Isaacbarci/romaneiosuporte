@@ -65,7 +65,7 @@
                 renderTable();
             } else {
                 // Caso contrário, carregue o arquivo Excel
-                fetch('caminho/para/seu/arquivo.xlsx')
+                fetch('romaneio.xlsx')
                     .then(response => response.arrayBuffer())
                     .then(arrayBuffer => {
                         workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
