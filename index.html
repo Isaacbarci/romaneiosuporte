@@ -83,8 +83,13 @@
         });
 
         function loadExcelFromDirectory() {
-            fetch('romaneio.xlsx')
-                .then(response => response.arrayBuffer())
+            fetch('dados.xlsx')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar o arquivo Excel.');
+                    }
+                    return response.arrayBuffer();
+                })
                 .then(buffer => {
                     workbook = XLSX.read(buffer, { type: 'array' });
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -93,21 +98,31 @@
                     findColumnIndexes();
                     renderTable();
                 })
-                .catch(error => console.error("Erro ao carregar arquivo:", error));
+                .catch(error => {
+                    console.error("Erro ao carregar arquivo:", error);
+                    alert("Erro ao carregar o arquivo Excel. Verifique o console para mais detalhes.");
+                });
         }
 
         function findColumnIndexes() {
             columnIndexes = {};
-            data[0].forEach((header, index) => {
-                columnIndexes[header.trim().toLowerCase()] = index;
-            });
+            if (data.length > 0) {
+                data[0].forEach((header, index) => {
+                    columnIndexes[header.trim().toLowerCase()] = index;
+                });
+            }
         }
 
         function renderTable() {
             const table = document.getElementById("dataTable");
-            table.innerHTML = "";
+            while (table.firstChild) {
+                table.removeChild(table.firstChild);
+            }
 
-            if (!data.length) return;
+            if (!data.length) {
+                console.warn("Nenhum dado disponível para renderizar.");
+                return;
+            }
 
             const headerRow = table.insertRow();
             data[0].forEach((header, colIndex) => {
