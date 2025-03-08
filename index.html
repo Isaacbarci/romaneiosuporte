@@ -54,17 +54,13 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             const storedData = localStorage.getItem("uploadedData");
-            const storedEditedRows = localStorage.getItem("editedRows");
-
-            if (storedData && storedEditedRows) {
-                // Se houver dados salvos, use-os
+            if (storedData) {
                 data = JSON.parse(storedData);
-                editedRows = new Set(JSON.parse(storedEditedRows));
                 filteredData = data.slice(1);
                 findColumnIndexes();
                 renderTable();
             } else {
-                // Caso contrário, carregue o arquivo Excel
+                // Carregar o arquivo diretamente
                 fetch('romaneio.xlsx')
                     .then(response => response.arrayBuffer())
                     .then(arrayBuffer => {
@@ -80,86 +76,64 @@
                         renderTable();
                     });
             }
+
+            const storedEditedRows = localStorage.getItem("editedRows");
+            if (storedEditedRows) {
+                editedRows = new Set(JSON.parse(storedEditedRows));
+                renderTable();
+            }
         });
 
         function findColumnIndexes() {
-            columnIndexes = {};
-            data[0].forEach((header, index) => {
-                columnIndexes[header.trim().toLowerCase()] = index;
-            });
+            if (data.length > 0) {
+                data[0].forEach((header, index) => {
+                    columnIndexes[header] = index;
+                });
+            }
         }
 
         function renderTable() {
             const table = document.getElementById("dataTable");
             table.innerHTML = "";
 
-            if (!data.length) return;
-
-            const headerRow = table.insertRow();
-            data[0].forEach((header, colIndex) => {
-                if (!hiddenColumns.includes(header.trim().toLowerCase())) {
-                    const th = document.createElement("th");
-                    th.textContent = header;
-                    headerRow.appendChild(th);
-                }
-            });
-
-            filteredData.forEach((row, rowIndex) => {
-                const tr = table.insertRow();
-                const originalIndex = data.indexOf(row);
-                if (editedRows.has(originalIndex)) {
-                    tr.classList.add("edited-row");
-                }
-                tr.onclick = () => openEditModal(rowIndex);
-                row.forEach((cell, colIndex) => {
-                    if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
-                        const td = tr.insertCell();
-                        td.textContent = cell;
+            if (data.length > 0) {
+                const headerRow = document.createElement("tr");
+                data[0].forEach(header => {
+                    if (!hiddenColumns.includes(header.toLowerCase())) {
+                        const th = document.createElement("th");
+                        th.textContent = header;
+                        headerRow.appendChild(th);
                     }
                 });
-            });
-        }
+                table.appendChild(headerRow);
 
-        function openEditModal(index) {
-            const originalIndex = data.indexOf(filteredData[index]);
-            document.getElementById("editIndex").value = originalIndex;
-            document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "N/A";
-            document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "N/A";
-            document.getElementById("DATADOROMANEIO").value = filteredData[index][columnIndexes["data do romaneio"]] || "";
-            document.getElementById("QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
-            document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
-            document.getElementById("Qtde").value = filteredData[index][columnIndexes["qtde"]] || "N/A";
-            document.getElementById("Saldo").value = filteredData[index][columnIndexes["saldo"]] || "N/A";
-
-            document.getElementById("editModal").style.display = "block";
+                filteredData.forEach((row, rowIndex) => {
+                    const tr = document.createElement("tr");
+                    data[0].forEach((header, colIndex) => {
+                        if (!hiddenColumns.includes(header.toLowerCase())) {
+                            const td = document.createElement("td");
+                            td.textContent = row[colIndex] || "";
+                            tr.appendChild(td);
+                        }
+                    });
+                    table.appendChild(tr);
+                });
+            }
         }
 
         function saveEdit() {
-            const originalIndex = parseInt(document.getElementById("editIndex").value);
-            if (originalIndex < 0) return;
+            const index = document.getElementById("editIndex").value;
+            const row = filteredData[index];
 
-            const originalRow = data[originalIndex];
-            const editedRow = [
-                document.getElementById("DATADOROMANEIO").value,
-                document.getElementById("QTDENVIADA").value,
-                document.getElementById("OBSROMANEIO").value
-            ];
+            row[columnIndexes["Data do Romaneio"]] = document.getElementById("DATADOROMANEIO").value;
+            row[columnIndexes["Qtd Enviada"]] = document.getElementById("QTDENVIADA").value;
+            row[columnIndexes["Obs Romaneio"]] = document.getElementById("OBSROMANEIO").value;
 
-            if (
-                originalRow[columnIndexes["data do romaneio"]] !== editedRow[0] ||
-                originalRow[columnIndexes["qtd enviada"]] !== editedRow[1] ||
-                originalRow[columnIndexes["obs romaneio"]] !== editedRow[2]
-            ) {
-                data[originalIndex][columnIndexes["data do romaneio"]] = editedRow[0];
-                data[originalIndex][columnIndexes["qtd enviada"]] = editedRow[1];
-                data[originalIndex][columnIndexes["obs romaneio"]] = editedRow[2];
+            editedRows.add(index);
+            localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
+            localStorage.setItem("uploadedData", JSON.stringify(data));
 
-                editedRows.add(originalIndex);
-                localStorage.setItem("uploadedData", JSON.stringify(data));
-                localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
-            }
-
-            document.getElementById("editModal").style.display = "none";
+            closeModal();
             renderTable();
         }
 
@@ -167,8 +141,23 @@
             document.getElementById("editModal").style.display = "none";
         }
 
+        function applyFilter() {
+            const filter = document.getElementById("identificacaoFilter").value.toLowerCase();
+            filteredData = data.slice(1).filter(row => {
+                return row[columnIndexes["Identificação 1"]].toLowerCase().includes(filter) ||
+                       row[columnIndexes["Posição / TAG"]].toLowerCase().includes(filter);
+            });
+            renderTable();
+        }
+
+        function downloadExcel() {
+            const newWorkbook = XLSX.utils.book_new();
+            const newSheet = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(newWorkbook, newSheet, "Sheet1");
+            XLSX.writeFile(newWorkbook, "edited_data.xlsx");
+        }
+
         function startQrScanner() {
-            document.getElementById("qr-container").style.display = "block";
             qrScanner = new Html5Qrcode("qr-reader");
             qrScanner.start(
                 { facingMode: "environment" },
@@ -176,47 +165,29 @@
                     fps: 10,
                     qrbox: 250
                 },
-                (decodedText, decodedResult) => {
-                    document.getElementById("identificacaoFilter").value = decodedText;
-                    applyFilter();
-                    stopQrScanner();
-                },
-                (errorMessage) => {
-                    console.error(errorMessage);
-                }
-            ).catch((err) => {
-                console.error(err);
+                qrCodeSuccessCallback,
+                qrCodeErrorCallback
+            ).catch(err => {
+                console.error("Erro ao iniciar o scanner de QR Code:", err);
             });
         }
 
         function stopQrScanner() {
-            if (qrScanner) {
-                qrScanner.stop().then(() => {
-                    document.getElementById("qr-container").style.display = "none";
-                }).catch((err) => {
-                    console.error(err);
-                });
-            }
-        }
-
-        function applyFilter() {
-            const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
-            filteredData = data.slice(1).filter(row => {
-                return row.some(cell => cell.toString().toLowerCase().includes(filterValue));
+            qrScanner.stop().then(() => {
+                console.log("Scanner de QR Code parado.");
+            }).catch(err => {
+                console.error("Erro ao parar o scanner de QR Code:", err);
             });
-            renderTable();
         }
 
-        function downloadExcel() {
-            if (!data.length) {
-                alert("Nenhum dado carregado para exportar.");
-                return;
-            }
+        function qrCodeSuccessCallback(decodedText) {
+            document.getElementById("identificacaoFilter").value = decodedText;
+            applyFilter();
+            stopQrScanner();
+        }
 
-            const updatedSheet = XLSX.utils.aoa_to_sheet(data);
-            const newWorkbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
-            XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
+        function qrCodeErrorCallback(error) {
+            console.error("Erro ao escanear QR Code:", error);
         }
     </script>
 </body>
