@@ -7,7 +7,116 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* Estilos permanecem os mesmos */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h2 {
+            color: #333;
+        }
+        input[type="text"], button {
+            margin: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        input[type="text"] {
+            width: 300px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .close-btn {
+            background-color: #dc3545;
+        }
+        .close-btn:hover {
+            background-color: #c82333;
+        }
+        .save-btn {
+            background-color: #28a745;
+        }
+        .save-btn:hover {
+            background-color: #218838;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        th {
+            background-color: #007BFF;
+            color: white;
+            white-space: normal;
+            word-wrap: break-word;
+            text-align: left;
+        }
+        td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+        .modal, #qr-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            width: 320px;
+            text-align: left;
+        }
+        .modal label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        .modal input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .modal input[readonly] {
+            background-color: #f9f9f9;
+            cursor: not-allowed;
+        }
+        .modal button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .edited-row {
+            background-color: lightblue !important;
+        }
     </style>
 </head>
 <body>
@@ -42,7 +151,6 @@
         let columnIndexes = {};
         let editedRows = new Set();
         let qrScanner;
-        let workbook;
 
         const hiddenColumns = [
             "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
@@ -52,16 +160,13 @@
             "localização", "status", "peso", "qtde enviada", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id", "serviço"
         ];
 
-        document.addEventListener("DOMContentLoaded", () => {
-            loadExcelFile();
-        });
-
-        function loadExcelFile() {
-            const url = 'romaneio.xlsx';
-            fetch(url)
+        // Carrega o arquivo automaticamente ao iniciar
+        function loadFileFromDirectory() {
+            const filePath = "romaneio.xlsx"; // Substitua pelo caminho do arquivo
+            fetch(filePath)
                 .then(response => response.arrayBuffer())
                 .then(arrayBuffer => {
-                    workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
+                    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
                     const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
                     data = jsonData;
@@ -73,10 +178,11 @@
                     renderTable();
                 })
                 .catch(error => {
-                    console.error('Erro ao carregar o arquivo Excel:', error);
+                    console.error("Erro ao carregar o arquivo:", error);
                 });
         }
 
+        // Encontra os índices das colunas
         function findColumnIndexes() {
             columnIndexes = {};
             data[0].forEach((header, index) => {
@@ -84,6 +190,7 @@
             });
         }
 
+        // Renderiza a tabela
         function renderTable() {
             const table = document.getElementById("dataTable");
             table.innerHTML = "";
@@ -115,6 +222,7 @@
             });
         }
 
+        // Abre o modal de edição
         function openEditModal(index) {
             const originalIndex = data.indexOf(filteredData[index]);
             document.getElementById("editIndex").value = originalIndex;
@@ -129,6 +237,7 @@
             document.getElementById("editModal").style.display = "block";
         }
 
+        // Salva as edições
         function saveEdit() {
             const originalIndex = parseInt(document.getElementById("editIndex").value);
             if (originalIndex < 0) return;
@@ -158,10 +267,12 @@
             renderTable();
         }
 
+        // Fecha o modal
         function closeModal() {
             document.getElementById("editModal").style.display = "none";
         }
 
+        // Inicia o scanner de QR Code
         function startQrScanner() {
             document.getElementById("qr-container").style.display = "block";
             qrScanner = new Html5Qrcode("qr-reader");
@@ -184,6 +295,7 @@
             });
         }
 
+        // Para o scanner de QR Code
         function stopQrScanner() {
             if (qrScanner) {
                 qrScanner.stop().then(() => {
@@ -194,6 +306,7 @@
             }
         }
 
+        // Aplica o filtro na tabela
         function applyFilter() {
             const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
             filteredData = data.slice(1).filter(row => {
@@ -202,6 +315,7 @@
             renderTable();
         }
 
+        // Faz o download do Excel
         function downloadExcel() {
             if (!data.length) {
                 alert("Nenhum dado carregado para exportar.");
@@ -213,6 +327,25 @@
             XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
             XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
         }
+
+        // Carrega o arquivo ao iniciar
+        document.addEventListener("DOMContentLoaded", () => {
+            const storedData = localStorage.getItem("uploadedData");
+            if (storedData) {
+                data = JSON.parse(storedData);
+                filteredData = data.slice(1);
+                findColumnIndexes();
+                renderTable();
+            } else {
+                loadFileFromDirectory(); // Carrega o arquivo automaticamente
+            }
+
+            const storedEditedRows = localStorage.getItem("editedRows");
+            if (storedEditedRows) {
+                editedRows = new Set(JSON.parse(storedEditedRows));
+                renderTable();
+            }
+        });
     </script>
 </body>
 </html>
