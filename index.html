@@ -160,6 +160,7 @@
         <input type="hidden" id="editIndex">
         <label>Posição / TAG: <input type="text" id="POSICAOTAG" readonly></label>
         <label>Identificação 1: <input type="text" id="IDENTIFICACAO1" readonly></label>
+        <label>Identificação 2: <input type="text" id="IDENTIFICACAO2" readonly></label>
         <label>Data do Romaneio: <input type="date" id="DATADOROMANEIO"></label>
         <label>Qtd Enviada: <input type="text" id="QTDENVIADA"></label>
         <label>Obs Romaneio: <input type="text" id="OBSROMANEIO"></label>
@@ -175,15 +176,26 @@
         let columnIndexes = {};
         let editedRows = new Set();
         let qrScanner;
-        let isScannerActive = false; // Variável de estado para controlar se o scanner está ativo
 
         const hiddenColumns = [
             "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
             "área superfície", "data corte", "data acoplamento", "data solda",
             "data jato/pintura", "número romaneio", "data romaneio", "data recebimento",
             "observação", "area m²", "data cadastro", "rev", "prog. fab.", "executante", "linha", "spool",
-            "localização", "status", "peso", "qtde enviada", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id", "serviço"
+            "localização", "status", "peso", "qtde enviada", "obs romaneio", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id", "serviço",
+            "identificação 2", "qtd enviada" // Adicionadas aqui para ocultar
         ];
+
+        // Função para formatar a data no formato "dia/mês/ano"
+        function formatDate(dateString) {
+            if (!dateString) return "";
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return ""; // Verifica se a data é válida
+            const day = String(date.getDate()).padStart(2, "0");
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
 
         // Carrega o arquivo automaticamente ao iniciar
         function loadFileFromDirectory() {
@@ -241,7 +253,12 @@
                 row.forEach((cell, colIndex) => {
                     if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
                         const td = tr.insertCell();
-                        td.textContent = cell;
+                        let cellValue = cell || "N/A";
+                        // Formata a data no formato "dia/mês/ano"
+                        if (data[0][colIndex].trim().toLowerCase() === "data do romaneio") {
+                            cellValue = formatDate(cellValue);
+                        }
+                        td.textContent = cellValue;
                     }
                 });
             });
@@ -253,6 +270,7 @@
             document.getElementById("editIndex").value = originalIndex;
             document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "N/A";
             document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "N/A";
+            document.getElementById("IDENTIFICACAO2").value = filteredData[index][columnIndexes["identificação 2"]] || "N/A";
             document.getElementById("DATADOROMANEIO").value = filteredData[index][columnIndexes["data do romaneio"]] || "";
             document.getElementById("QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
             document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
@@ -301,7 +319,7 @@
         function startQrScanner() {
             document.getElementById("qr-container").style.display = "block";
             isScannerActive = true;
-            document.getElementById("closeScannerBtn").style.display = "block"; // Mostra o botão "Fechar Scanner"
+            document.getElementById("closeScannerBtn").style.display = "block";
 
             qrScanner = new Html5Qrcode("qr-reader");
             qrScanner.start(
@@ -329,7 +347,7 @@
                 qrScanner.stop().then(() => {
                     document.getElementById("qr-container").style.display = "none";
                     isScannerActive = false;
-                    document.getElementById("closeScannerBtn").style.display = "none"; // Esconde o botão "Fechar Scanner"
+                    document.getElementById("closeScannerBtn").style.display = "none";
                 }).catch((err) => {
                     console.error(err);
                 });
