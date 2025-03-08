@@ -3,11 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tabela Interativa com QR Code</title>
+    <title>Romaneio de Suporte</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* Estilos permanecem os mesmos */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h2 {
+            color: #333;
+        }
+        input[type="file"], input[type="text"], button {
+            margin: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+        input[type="text"] {
+            width: 300px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .close-btn {
+            background-color: #dc3545;
+        }
+        .close-btn:hover {
+            background-color: #c82333;
+        }
+        .save-btn {
+            background-color: #28a745;
+        }
+        .save-btn:hover {
+            background-color: #218838;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        th {
+            background-color: #007BFF;
+            color: white;
+            white-space: normal;
+            word-wrap: break-word;
+            text-align: left;
+        }
+        td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+        .modal, #qr-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            width: 320px;
+            text-align: left;
+        }
+        .modal label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        .modal input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .modal input[readonly] {
+            background-color: #f9f9f9;
+            cursor: not-allowed;
+        }
+        .modal button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .edited-row {
+            background-color: lightblue !important;
+        }
     </style>
 </head>
 <body>
@@ -52,28 +161,14 @@
             "localização", "status", "peso", "qtde enviada", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id", "serviço"
         ];
 
-        function loadFileFromServer() {
-            fetch('romaneio.xlsx') // Substitua pelo caminho correto do arquivo no servidor
-                .then(response => response.arrayBuffer())
-                .then(arrayBuffer => {
-                    workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
-                    data = jsonData;
-                    localStorage.setItem("uploadedData", JSON.stringify(data));
-                    filteredData = data.slice(1);
-                    editedRows.clear();
-                    localStorage.removeItem("editedRows");
-                    findColumnIndexes();
-                    renderTable();
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar o arquivo:', error);
-                });
-        }
-
         document.addEventListener("DOMContentLoaded", () => {
-            loadFileFromServer();
+            const storedData = localStorage.getItem("uploadedData");
+            if (storedData) {
+                data = JSON.parse(storedData);
+                filteredData = data.slice(1);
+                findColumnIndexes();
+                renderTable();
+            }
 
             const storedEditedRows = localStorage.getItem("editedRows");
             if (storedEditedRows) {
@@ -81,6 +176,33 @@
                 renderTable();
             }
         });
+
+function loadFileFromServer() {
+    fetch('romaneio.xlsx') // Substitua pelo caminho correto do arquivo no servidor
+        .then(response => response.arrayBuffer())
+        .then(arrayBuffer => {
+            workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
+            data = jsonData;
+            localStorage.setItem("uploadedData", JSON.stringify(data));
+            filteredData = data.slice(1);
+            editedRows.clear();
+            localStorage.removeItem("editedRows");
+            findColumnIndexes();
+            renderTable();
+        })
+        .catch(error => {
+            console.error('Erro ao carregar o arquivo:', error);
+        });
+}
+
+// Chame a função para carregar o arquivo quando a página for carregada
+document.addEventListener("DOMContentLoaded", () => {
+    loadFileFromServer();
+});
+
+        }
 
         function findColumnIndexes() {
             columnIndexes = {};
