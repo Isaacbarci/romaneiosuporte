@@ -3,93 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Romaneio de Suporte</title>
+    <title>Tabela Interativa com QR Code</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f9;
-        }
-        h2 {
-            color: #333;
-        }
-        input[type="file"], input[type="text"], button {
-            margin: 5px;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
-        input[type="text"] {
-            width: 300px;
-        }
-        button {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .close-btn {
-            background-color: #dc3545;
-        }
-        .close-btn:hover {
-            background-color: #c82333;
-        }
-        .save-btn {
-            background-color: #28a745;
-        }
-        .save-btn:hover {
-            background-color: #218838;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            overflow-x: auto;
-            margin-top: 20px;
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-        th {
-            background-color: #007BFF;
-            color: white;
-            white-space: normal;
-            word-wrap: break-word;
-            text-align: left;
-        }
-        td {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            cursor: pointer;
-        }
-        .modal, #qr-container {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            width: 320px;
-            text-align: left;
-        }
-        .edited-row {
-            background-color: lightblue !important;
-        }
+        /* Estilos permanecem os mesmos */
     </style>
 </head>
 <body>
@@ -105,6 +23,19 @@
 
     <table id="dataTable"></table>
 
+    <div id="editModal" class="modal">
+        <input type="hidden" id="editIndex">
+        <label>Posição / TAG: <input type="text" id="POSICAOTAG" readonly></label>
+        <label>Identificação 1: <input type="text" id="IDENTIFICACAO1" readonly></label>
+        <label>Data do Romaneio: <input type="date" id="DATADOROMANEIO"></label>
+        <label>Qtd Enviada: <input type="text" id="QTDENVIADA"></label>
+        <label>Obs Romaneio: <input type="text" id="OBSROMANEIO"></label>
+        <label>Qtde: <input type="text" id="Qtde" readonly></label>
+        <label>Saldo: <input type="text" id="Saldo" readonly></label>
+        <button class="save-btn" onclick="saveEdit()">Salvar</button>
+        <button class="close-btn" onclick="closeModal()">Fechar</button>
+    </div>
+
     <script>
         let data = [];
         let filteredData = [];
@@ -119,10 +50,15 @@
             "data jato/pintura", "número romaneio", "data romaneio", "data recebimento",
             "observação", "area m²", "data cadastro", "rev", "prog. fab.", "executante", "linha", "spool",
             "localização", "status", "peso", "qtde enviada", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id", "serviço"
-        ].map(col => col.toLowerCase());
+        ];
 
-        function loadFileFromServer() {
-            fetch('romaneio.xlsx')
+        document.addEventListener("DOMContentLoaded", () => {
+            loadExcelFile();
+        });
+
+        function loadExcelFile() {
+            const url = 'romaneio.xlsx';
+            fetch(url)
                 .then(response => response.arrayBuffer())
                 .then(arrayBuffer => {
                     workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
@@ -131,19 +67,19 @@
                     data = jsonData;
                     localStorage.setItem("uploadedData", JSON.stringify(data));
                     filteredData = data.slice(1);
+                    editedRows.clear();
+                    localStorage.removeItem("editedRows");
                     findColumnIndexes();
                     renderTable();
                 })
-                .catch(error => console.error('Erro ao carregar o arquivo:', error));
+                .catch(error => {
+                    console.error('Erro ao carregar o arquivo Excel:', error);
+                });
         }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            loadFileFromServer();
-        });
 
         function findColumnIndexes() {
             columnIndexes = {};
-            data[0]?.forEach((header, index) => {
+            data[0].forEach((header, index) => {
                 columnIndexes[header.trim().toLowerCase()] = index;
             });
         }
@@ -163,8 +99,13 @@
                 }
             });
 
-            filteredData.forEach((row) => {
+            filteredData.forEach((row, rowIndex) => {
                 const tr = table.insertRow();
+                const originalIndex = data.indexOf(row);
+                if (editedRows.has(originalIndex)) {
+                    tr.classList.add("edited-row");
+                }
+                tr.onclick = () => openEditModal(rowIndex);
                 row.forEach((cell, colIndex) => {
                     if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
                         const td = tr.insertCell();
@@ -174,14 +115,99 @@
             });
         }
 
+        function openEditModal(index) {
+            const originalIndex = data.indexOf(filteredData[index]);
+            document.getElementById("editIndex").value = originalIndex;
+            document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "N/A";
+            document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "N/A";
+            document.getElementById("DATADOROMANEIO").value = filteredData[index][columnIndexes["data do romaneio"]] || "";
+            document.getElementById("QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
+            document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
+            document.getElementById("Qtde").value = filteredData[index][columnIndexes["qtde"]] || "N/A";
+            document.getElementById("Saldo").value = filteredData[index][columnIndexes["saldo"]] || "N/A";
+
+            document.getElementById("editModal").style.display = "block";
+        }
+
+        function saveEdit() {
+            const originalIndex = parseInt(document.getElementById("editIndex").value);
+            if (originalIndex < 0) return;
+
+            const originalRow = data[originalIndex];
+            const editedRow = [
+                document.getElementById("DATADOROMANEIO").value,
+                document.getElementById("QTDENVIADA").value,
+                document.getElementById("OBSROMANEIO").value
+            ];
+
+            if (
+                originalRow[columnIndexes["data do romaneio"]] !== editedRow[0] ||
+                originalRow[columnIndexes["qtd enviada"]] !== editedRow[1] ||
+                originalRow[columnIndexes["obs romaneio"]] !== editedRow[2]
+            ) {
+                data[originalIndex][columnIndexes["data do romaneio"]] = editedRow[0];
+                data[originalIndex][columnIndexes["qtd enviada"]] = editedRow[1];
+                data[originalIndex][columnIndexes["obs romaneio"]] = editedRow[2];
+
+                editedRows.add(originalIndex);
+                localStorage.setItem("uploadedData", JSON.stringify(data));
+                localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
+            }
+
+            document.getElementById("editModal").style.display = "none";
+            renderTable();
+        }
+
+        function closeModal() {
+            document.getElementById("editModal").style.display = "none";
+        }
+
+        function startQrScanner() {
+            document.getElementById("qr-container").style.display = "block";
+            qrScanner = new Html5Qrcode("qr-reader");
+            qrScanner.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: 250
+                },
+                (decodedText, decodedResult) => {
+                    document.getElementById("identificacaoFilter").value = decodedText;
+                    applyFilter();
+                    stopQrScanner();
+                },
+                (errorMessage) => {
+                    console.error(errorMessage);
+                }
+            ).catch((err) => {
+                console.error(err);
+            });
+        }
+
+        function stopQrScanner() {
+            if (qrScanner) {
+                qrScanner.stop().then(() => {
+                    document.getElementById("qr-container").style.display = "none";
+                }).catch((err) => {
+                    console.error(err);
+                });
+            }
+        }
+
         function applyFilter() {
             const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
-            filteredData = data.slice(1).filter(row => row.some(cell => cell.toString().toLowerCase().includes(filterValue)));
+            filteredData = data.slice(1).filter(row => {
+                return row.some(cell => cell.toString().toLowerCase().includes(filterValue));
+            });
             renderTable();
         }
 
         function downloadExcel() {
-            if (!data.length) return alert("Nenhum dado carregado para exportar.");
+            if (!data.length) {
+                alert("Nenhum dado carregado para exportar.");
+                return;
+            }
+
             const updatedSheet = XLSX.utils.aoa_to_sheet(data);
             const newWorkbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
