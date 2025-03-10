@@ -126,17 +126,6 @@
         .edited-row {
             background-color: lightblue !important;
         }
-  function openEditModal(index) {
-    document.body.classList.add("modal-open"); // Impede rolagem da página
-    document.getElementById("editModal").style.display = "flex";
-}
-
-function closeModal() {
-    document.body.classList.remove("modal-open"); // Libera a rolagem da página
-    document.getElementById("editModal").style.display = "none";
-}
-
-
     </style>
 </head>
 <body>
@@ -273,7 +262,10 @@ function closeModal() {
             filteredData.forEach((row, rowIndex) => {
                 const tr = table.insertRow();
                 const originalIndex = data.indexOf(row);
-                if (editedRows.has(originalIndex)) {
+                const dataRomaneio = row[columnIndexes["data do romaneio"]];
+
+                // Verifica se a data do romaneio está vazia
+                if (dataRomaneio && editedRows.has(originalIndex)) {
                     tr.classList.add("edited-row");
                 }
                 tr.onclick = () => openEditModal(rowIndex);
