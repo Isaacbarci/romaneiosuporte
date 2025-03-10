@@ -170,7 +170,7 @@
         let editedRows = new Set();
         let qrScanner;
 
-        const hiddenColumns = [
+       const hiddenColumns = [
     "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
     "área superfície", "data corte", "data acoplamento", "data solda",
     "data jato/pintura", "número romaneio", "data romaneio", "data recebimento",
@@ -379,8 +379,7 @@
             });
             renderTable();
         }
-
-    function downloadExcel() {
+function downloadExcel() {
     if (!data.length) {
         alert("Nenhum dado carregado para exportar.");
         return;
@@ -473,6 +472,8 @@
     // Gerar o arquivo para download
     XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
 }
+
+
 
 
         // Carrega o arquivo ao iniciar
