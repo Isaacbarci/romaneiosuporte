@@ -9,11 +9,14 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0,1 /* Removido a margem lateral */
+            padding: 0; /* Removido o padding */
             background-color: #f4f4f9;
         }
         h2 {
             color: #333;
+            padding: 20px; /* Adicionado padding ao título para espaçamento */
+            margin: 0; /* Removido margem do título */
         }
         input[type="text"], button {
             margin: 5px;
@@ -389,18 +392,93 @@
             renderTable();
         }
 
-        // Faz o download do Excel
-        function downloadExcel() {
-            if (!data.length) {
-                alert("Nenhum dado carregado para exportar.");
-                return;
-            }
+     function downloadExcel() {
+    if (!data.length) {
+        alert("Nenhum dado carregado para exportar.");
+        return;
+    }
 
-            const updatedSheet = XLSX.utils.aoa_to_sheet(data);
-            const newWorkbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
-            XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
+    // Índices das colunas necessárias
+    const colDataRomaneio = columnIndexes["data do romaneio"];
+    const colObservacao = columnIndexes["observação"];
+    const colQtdEnviada = columnIndexes["qtd enviada"];
+    const colPeso = columnIndexes["peso"];
+    const colAreaM2 = columnIndexes["area m²"];
+    const colPesoKg = columnIndexes["peso (kg)"];
+    const colAreaSuperficie = columnIndexes["área superfície"];
+    const colDataCadastro = columnIndexes["data cadastro"]; // Será removida
+
+    // Criar uma cópia da tabela com os cálculos corrigidos
+    let newData = data.map((row, index) => {
+        if (index === 0) {
+            // Reorganizar os cabeçalhos, removendo "DATA CADASTRO" e trocando "DATA DO ROMANEIO" com "OBSERVAÇÃO"
+            let reorderedHeaders = row.filter((_, colIndex) => colIndex !== colDataCadastro);
+            [reorderedHeaders[colDataRomaneio], reorderedHeaders[colObservacao]] =
+                [reorderedHeaders[colObservacao], reorderedHeaders[colDataRomaneio]];
+            return reorderedHeaders;
         }
+
+        let qtdEnviadaStr = row[colQtdEnviada]?.toString().trim();
+        if (!qtdEnviadaStr || qtdEnviadaStr === "" || qtdEnviadaStr === "0") {
+            row[colPeso] = "";
+            row[colAreaM2] = "";
+        } else {
+            let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
+            let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
+            let areaSuperficie = parseFloat(row[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
+
+            let pesoCalculado = (qtdEnviada > 0) ? (pesoKg / qtdEnviada) : 0;
+            let areaCalculada = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
+
+            row[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
+            row[colPeso] = pesoCalculado.toFixed(2).replace(".", ",");
+            row[colAreaM2] = areaCalculada.toFixed(2).replace(".", ",");
+        }
+
+        row[colPesoKg] = row[colPesoKg]?.toString().replace(".", ",");
+        row[colAreaSuperficie] = row[colAreaSuperficie]?.toString().replace(".", ",");
+
+        Object.keys(columnIndexes).forEach(colName => {
+            if (colName.includes("data")) {
+                let colIndex = columnIndexes[colName];
+                let dateValue = row[colIndex];
+
+                if (dateValue && !isNaN(new Date(dateValue))) {
+                    let dateObj = new Date(dateValue);
+                    let formattedDate = `${String(dateObj.getDate()).padStart(2, "0")}/` +
+                                        `${String(dateObj.getMonth() + 1).padStart(2, "0")}/` +
+                                        `${dateObj.getFullYear()}`;
+                    row[colIndex] = formattedDate;
+                }
+            }
+        });
+
+        // Reorganizar colunas, removendo "DATA CADASTRO" e trocando "DATA DO ROMANEIO" com "OBSERVAÇÃO"
+        let reorderedRow = row.filter((_, colIndex) => colIndex !== colDataCadastro);
+        [reorderedRow[colDataRomaneio], reorderedRow[colObservacao]] =
+            [reorderedRow[colObservacao], reorderedRow[colDataRomaneio]];
+        return reorderedRow;
+    });
+
+    // Criar a planilha
+    const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
+
+    // Ajuste automático da largura das colunas
+    let columnWidths = newData[0].map((col, index) => {
+        let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
+        return { wch: maxLength + 2 };
+    });
+
+    updatedSheet["!cols"] = columnWidths;
+
+    // Criar e baixar o arquivo Excel
+    const newWorkbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
+
+    // Gerar o arquivo para download
+    XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
+}
+
 
         // Carrega o arquivo ao iniciar
         document.addEventListener("DOMContentLoaded", () => {
