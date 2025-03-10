@@ -385,7 +385,7 @@
             renderTable();
         }
 
-     function downloadExcel() {
+function downloadExcel() {
     if (!data.length) {
         alert("Nenhum dado carregado para exportar.");
         return;
@@ -408,6 +408,11 @@
             let reorderedHeaders = row.filter((_, colIndex) => colIndex !== colDataCadastro);
             [reorderedHeaders[colDataRomaneio], reorderedHeaders[colObservacao]] =
                 [reorderedHeaders[colObservacao], reorderedHeaders[colDataRomaneio]];
+
+            // Alterar os nomes das colunas
+            reorderedHeaders[colPeso] = "PESO Unitário";
+            reorderedHeaders[colAreaM2] = "AREA M² Unitário";
+
             return reorderedHeaders;
         }
 
