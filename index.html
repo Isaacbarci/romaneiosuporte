@@ -385,21 +385,23 @@
             renderTable();
         }
 
-function downloadExcel() {
+     function downloadExcel() {
     if (!data.length) {
         alert("Nenhum dado carregado para exportar.");
         return;
     }
 
-    // Índices das colunas necessárias (com os nomes trocados)
-    const colDataRomaneio = columnIndexes["data do romaneio"];
-    const colObservacao = columnIndexes["observação"];
-    const colQtdEnviada = columnIndexes["qtd enviada"];
-    const colPesoUnitario = columnIndexes["peso"]; // Nome trocado
-    const colAreaM2Unitario = columnIndexes["area m²"]; // Nome trocado
-    const colPesoKg = columnIndexes["peso (kg)"];
-    const colAreaSuperficie = columnIndexes["área superfície"];
-    const colDataCadastro = columnIndexes["data cadastro"]; // Será removida
+    // Índices das colunas necessárias
+    const {
+        "data do romaneio": colDataRomaneio,
+        "observação": colObservacao,
+        "qtd enviada": colQtdEnviada,
+        "peso unitário": colPesoUnitario,
+        "area m² unitário": colAreaM2Unitario,
+        "peso (kg)": colPesoKg,
+        "área superfície": colAreaSuperficie,
+        "data cadastro": colDataCadastro
+    } = columnIndexes;
 
     // Criar uma cópia da tabela com os cálculos corrigidos
     let newData = data.map((row, index) => {
@@ -411,39 +413,22 @@ function downloadExcel() {
             return reorderedHeaders;
         }
 
-        // Converter valores para cálculos
-        let qtdEnviadaStr = row[colQtdEnviada]?.toString().trim();
-        if (!qtdEnviadaStr || qtdEnviadaStr === "" || qtdEnviadaStr === "0") {
-            row[colPesoUnitario] = ""; // Nome trocado
-            row[colAreaM2Unitario] = ""; // Nome trocado
-        } else {
-            let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
-            let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
-            let areaSuperficie = parseFloat(row[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
+        let qtdEnviada = parseFloat(row[colQtdEnviada]?.toString().replace(",", ".")) || 1;
+        let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
+        let areaSuperficie = parseFloat(row[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
 
-            let pesoUnitario = (qtdEnviada > 0) ? (pesoKg / qtdEnviada) : 0;
-            let areaUnitario = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
-
-            row[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
-            row[colPesoUnitario] = pesoUnitario.toFixed(2).replace(".", ","); // Nome trocado
-            row[colAreaM2Unitario] = areaUnitario.toFixed(2).replace(".", ","); // Nome trocado
-        }
-
+        row[colPesoUnitario] = qtdEnviada > 0 ? (pesoKg / qtdEnviada).toFixed(2).replace(".", ",") : "";
+        row[colAreaM2Unitario] = qtdEnviada > 0 ? (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",") : "";
+        row[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
         row[colPesoKg] = row[colPesoKg]?.toString().replace(".", ",");
         row[colAreaSuperficie] = row[colAreaSuperficie]?.toString().replace(".", ",");
 
-        // Formatar datas
-        Object.keys(columnIndexes).forEach(colName => {
+        Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
             if (colName.includes("data")) {
-                let colIndex = columnIndexes[colName];
                 let dateValue = row[colIndex];
-
                 if (dateValue && !isNaN(new Date(dateValue))) {
                     let dateObj = new Date(dateValue);
-                    let formattedDate = `${String(dateObj.getDate()).padStart(2, "0")}/` +
-                                        `${String(dateObj.getMonth() + 1).padStart(2, "0")}/` +
-                                        `${dateObj.getFullYear()}`;
-                    row[colIndex] = formattedDate;
+                    row[colIndex] = dateObj.toLocaleDateString("pt-BR");
                 }
             }
         });
@@ -459,18 +444,14 @@ function downloadExcel() {
     const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
 
     // Ajuste automático da largura das colunas
-    let columnWidths = newData[0].map((col, index) => {
+    updatedSheet["!cols"] = newData[0].map((_, index) => {
         let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
         return { wch: maxLength + 2 };
     });
 
-    updatedSheet["!cols"] = columnWidths;
-
     // Criar e baixar o arquivo Excel
     const newWorkbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
-
-    // Gerar o arquivo para download
     XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
 }
 
