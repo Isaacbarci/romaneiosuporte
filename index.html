@@ -171,14 +171,14 @@
         let editedRows = new Set();
         let qrScanner;
 
-       const hiddenColumns = [
-    "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
+        const hiddenColumns = [
+     "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
     "área superfície", "data corte", "data acoplamento", "data solda",
     "data jato/pintura", "número romaneio", "data romaneio", "data recebimento",
     "observação", "area m² unitário", "data cadastro", "rev", "prog. fab.", "executante", "linha", "spool",
     "localização", "status", "peso unitário", "qtde enviada", "obs romaneio", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id", "serviço",
     "identificação 2", "qtd enviada", "area m²", "peso"
-];
+        ];
 
         // Função para confirmar a atualização do arquivo
         function confirmUpdate() {
@@ -381,8 +381,8 @@
             renderTable();
         }
 
-    function downloadExcel() {
-    if (!data || !data.length) {
+     function downloadExcel() {
+    if (!data.length) {
         alert("Nenhum dado carregado para exportar.");
         return;
     }
@@ -391,88 +391,85 @@
     const colDataRomaneio = columnIndexes["data do romaneio"];
     const colObservacao = columnIndexes["observação"];
     const colQtdEnviada = columnIndexes["qtd enviada"];
-    const colPesoUnitario = columnIndexes["PESO Unitário"];
-    const colAreaM2Unitario = columnIndexes["ÁREA M²"];
+    const colPesoUnitario = columnIndexes["peso Unitário"];
+    const colAreaM2Unitario = columnIndexes["area m² Unitário"];
     const colPesoKg = columnIndexes["peso (kg)"];
     const colAreaSuperficie = columnIndexes["área superfície"];
     const colDataCadastro = columnIndexes["data cadastro"]; // Será removida
 
     // Criar uma cópia da tabela com os cálculos corrigidos
     let newData = data.map((row, index) => {
-        let newRow = row.slice(); // Criar cópia para evitar mutação do original
-
         if (index === 0) {
-            // Remover "DATA CADASTRO" e trocar "DATA DO ROMANEIO" com "OBSERVAÇÃO"
-            newRow = newRow.filter((_, colIndex) => colIndex !== colDataCadastro);
-            if (colDataRomaneio !== undefined && colObservacao !== undefined) {
-                [newRow[colDataRomaneio], newRow[colObservacao]] =
-                    [newRow[colObservacao], newRow[colDataRomaneio]];
-            }
-            return newRow;
+            // Reorganizar os cabeçalhos, removendo "DATA CADASTRO" e trocando "DATA DO ROMANEIO" com "OBSERVAÇÃO"
+            let reorderedHeaders = row.filter((_, colIndex) => colIndex !== colDataCadastro);
+            [reorderedHeaders[colDataRomaneio], reorderedHeaders[colObservacao]] =
+                [reorderedHeaders[colObservacao], reorderedHeaders[colDataRomaneio]];
+            return reorderedHeaders;
         }
 
-        // Processamento da quantidade enviada
-        let qtdEnviada = parseFloat((newRow[colQtdEnviada] || "0").toString().replace(",", ".")) || 0;
-
-        if (qtdEnviada === 0) {
-            newRow[colPesoUnitario] = "";
-            newRow[colAreaM2Unitario] = "";
+        let qtdEnviadaStr = row[colQtdEnviada]?.toString().trim();
+        if (!qtdEnviadaStr || qtdEnviadaStr === "" || qtdEnviadaStr === "0") {
+            row[colPesoUnitario] = "";
+            row[colAreaM2Unitario] = "";
         } else {
-            let pesoKg = parseFloat((newRow[colPesoKg] || "0").toString().replace(",", ".")) || 0;
-            let areaSuperficie = parseFloat((newRow[colAreaSuperficie] || "0").toString().replace(",", ".")) || 0;
+            let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
+            let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
+            let areaSuperficie = parseFloat(row[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
 
-            let pesoCalculado = qtdEnviada > 0 ? (pesoKg / qtdEnviada).toFixed(2).replace(".", ",") : "";
-            let areaCalculada = qtdEnviada > 0 ? (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",") : "";
+            let pesoCalculado = (qtdEnviada > 0) ? (pesoKg / qtdEnviada) : 0;
+            let areaCalculada = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
 
-            newRow[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
-            newRow[colPesoUnitario] = pesoCalculado;
-            newRow[colAreaM2Unitario] = areaCalculada;
+            row[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
+            row[colPesoUnitario] = pesoCalculado.toFixed(2).replace(".", ",");
+            row[colAreaM2Unitario] = areaCalculada.toFixed(2).replace(".", ",");
         }
 
-        // Ajustar valores numéricos para o formato adequado
-        if (newRow[colPesoKg]) newRow[colPesoKg] = newRow[colPesoKg].toString().replace(".", ",");
-        if (newRow[colAreaSuperficie]) newRow[colAreaSuperficie] = newRow[colAreaSuperficie].toString().replace(".", ",");
+        row[colPesoKg] = row[colPesoKg]?.toString().replace(".", ",");
+        row[colAreaSuperficie] = row[colAreaSuperficie]?.toString().replace(".", ",");
 
-        // Corrigir datas no formato DD/MM/AAAA e ajustar UTC corretamente
-        Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
+        Object.keys(columnIndexes).forEach(colName => {
             if (colName.includes("data")) {
-                let dateValue = newRow[colIndex];
-                if (dateValue && !isNaN(Date.parse(dateValue))) {
+                let colIndex = columnIndexes[colName];
+                let dateValue = row[colIndex];
+
+                if (dateValue && !isNaN(new Date(dateValue))) {
                     let dateObj = new Date(dateValue);
-                    dateObj.setMinutes(dateObj.getMinutes() + dateObj.getTimezoneOffset()); // Ajusta UTC
-                    newRow[colIndex] = dateObj.toLocaleDateString("pt-BR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric"
-                    });
+                    dateObj.setDate(dateObj.getDate() + 1); // Corrigir deslocamento da data
+
+                    let formattedDate = `${String(dateObj.getDate()).padStart(2, "0")}/` +
+                                        `${String(dateObj.getMonth() + 1).padStart(2, "0")}/` +
+                                        `${dateObj.getFullYear()}`;
+                    row[colIndex] = formattedDate;
                 }
             }
         });
 
-        // Remover "DATA CADASTRO" e trocar "DATA DO ROMANEIO" com "OBSERVAÇÃO"
-        newRow = newRow.filter((_, colIndex) => colIndex !== colDataCadastro);
-        if (colDataRomaneio !== undefined && colObservacao !== undefined) {
-            [newRow[colDataRomaneio], newRow[colObservacao]] =
-                [newRow[colObservacao], newRow[colDataRomaneio]];
-        }
-
-        return newRow;
+        // Reorganizar colunas, removendo "DATA CADASTRO" e trocando "DATA DO ROMANEIO" com "OBSERVAÇÃO"
+        let reorderedRow = row.filter((_, colIndex) => colIndex !== colDataCadastro);
+        [reorderedRow[colDataRomaneio], reorderedRow[colObservacao]] =
+            [reorderedRow[colObservacao], reorderedRow[colDataRomaneio]];
+        return reorderedRow;
     });
 
     // Criar a planilha
     const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
 
     // Ajuste automático da largura das colunas
-    updatedSheet["!cols"] = newData[0].map((_, index) => {
+    let columnWidths = newData[0].map((col, index) => {
         let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
         return { wch: maxLength + 2 };
     });
 
+    updatedSheet["!cols"] = columnWidths;
+
     // Criar e baixar o arquivo Excel
     const newWorkbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
+
+    // Gerar o arquivo para download
     XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
 }
+
 
         // Carrega o arquivo ao iniciar
         document.addEventListener("DOMContentLoaded", () => {
