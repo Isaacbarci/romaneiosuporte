@@ -416,26 +416,25 @@ function downloadExcel() {
             return reorderedHeaders;
         }
 
+        // Converter valores para cálculos
         let qtdEnviadaStr = row[colQtdEnviada]?.toString().trim();
-        if (!qtdEnviadaStr || qtdEnviadaStr === "" || qtdEnviadaStr === "0") {
-            row[colPeso] = "";
-            row[colAreaM2] = "";
-        } else {
-            let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
-            let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
-            let areaSuperficie = parseFloat(row[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
+        let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
+        let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
+        let areaSuperficie = parseFloat(row[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
 
-            let pesoCalculado = (qtdEnviada > 0) ? (pesoKg / qtdEnviada) : 0;
-            let areaCalculada = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
+        // Calcular PESO Unitário e AREA M² Unitário
+        let pesoUnitario = (qtdEnviada > 0) ? (pesoKg / qtdEnviada) : 0;
+        let areaUnitario = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
 
-            row[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
-            row[colPeso] = pesoCalculado.toFixed(2).replace(".", ",");
-            row[colAreaM2] = areaCalculada.toFixed(2).replace(".", ",");
-        }
+        // Atribuir os valores calculados às colunas corretas
+        row[colPeso] = pesoUnitario.toFixed(2).replace(".", ",");
+        row[colAreaM2] = areaUnitario.toFixed(2).replace(".", ",");
 
+        // Formatar valores de PESO (kg) e ÁREA SUPERFÍCIE
         row[colPesoKg] = row[colPesoKg]?.toString().replace(".", ",");
         row[colAreaSuperficie] = row[colAreaSuperficie]?.toString().replace(".", ",");
 
+        // Formatar datas
         Object.keys(columnIndexes).forEach(colName => {
             if (colName.includes("data")) {
                 let colIndex = columnIndexes[colName];
