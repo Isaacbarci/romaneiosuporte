@@ -47,7 +47,7 @@
         .save-btn:hover {
             background-color: #218838;
         }
-          table {
+        table {
             border-collapse: collapse;
             width: 100%;
             overflow-x: auto;
@@ -75,7 +75,7 @@
             text-overflow: ellipsis;
             cursor: pointer;
         }
-       .modal {
+        .modal {
             display: none;
             position: fixed;
             top: 50%;
@@ -87,12 +87,11 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             z-index: 1000;
             width: 90%;
-            max-width: 450px; /* Modal maior e mais bonito */
+            max-width: 450px;
             max-height: 85vh;
             overflow-y: auto;
             text-align: left;
             border: 3px solid black;
-
         }
         .modal label {
             display: block;
@@ -124,9 +123,9 @@
         .edited-row {
             background-color: lightblue !important;
         }
-         @media (max-width: 600px) {
+        @media (max-width: 600px) {
             .modal {
-                width: 95%; /* Ajuste para telas menores */
+                width: 95%;
                 padding: 15px;
             }
             .modal label {
@@ -140,11 +139,17 @@
                 padding: 8px;
             }
         }
-
     </style>
 </head>
 <body>
     <h2>ROMANEIO DE SUPORTE</h2>
+    <select id="fileList">
+        <option value="">Selecione um arquivo</option>
+        <!-- Lista de arquivos disponíveis -->
+        <option value="romaneio1.xlsx">Romaneio 1</option>
+        <option value="romaneio2.xlsx">Romaneio 2</option>
+    </select>
+    <button onclick="updateFile()">Atualizar Arquivo</button>
     <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR ou Identificação" onkeyup="applyFilter()">
     <button onclick="downloadExcel()">Download Excel</button>
     <button onclick="startQrScanner()">Escanear QR Code</button>
@@ -183,35 +188,22 @@
             "data jato/pintura", "número romaneio", "data romaneio", "data recebimento",
             "observação", "area m²", "data cadastro", "rev", "prog. fab.", "executante", "linha", "spool",
             "localização", "status", "peso", "qtde enviada", "obs romaneio", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id", "serviço",
-            "identificação 2", "qtd enviada" // Adicionadas aqui para ocultar
+            "identificação 2", "qtd enviada"
         ];
 
-        // Função para formatar a data no formato "dia/mês/ano"
-        function formatDate(dateString) {
-            if (!dateString) return "";
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return ""; // Verifica se a data é válida
-            const day = String(date.getUTCDate()).padStart(2, "0"); // Usa UTC para evitar problemas de fuso horário
-            const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-            const year = date.getUTCFullYear();
-            return `${day}/${month}/${year}`;
+        // Função para atualizar o arquivo selecionado na lista
+        function updateFile() {
+            const selectedFile = document.getElementById("fileList").value;
+            if (!selectedFile) {
+                alert("Selecione um arquivo da lista para atualizar.");
+                return;
+            }
+            loadSelectedFile(selectedFile);
         }
 
-        // Função para converter a data para o formato YYYY-MM-DD (usado pelo input type="date")
-        function formatDateForInput(dateString) {
-            if (!dateString) return "";
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return ""; // Verifica se a data é válida
-            const day = String(date.getUTCDate()).padStart(2, "0"); // Usa UTC para evitar problemas de fuso horário
-            const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-            const year = date.getUTCFullYear();
-            return `${year}-${month}-${day}`;
-        }
-
-        // Carrega o arquivo automaticamente ao iniciar
-        function loadFileFromDirectory() {
-            const filePath = "romaneio.xlsx"; // Substitua pelo caminho do arquivo
-            fetch(filePath)
+        // Carrega o arquivo selecionado da lista
+        function loadSelectedFile(fileName) {
+            fetch(fileName)
                 .then(response => response.arrayBuffer())
                 .then(arrayBuffer => {
                     const workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
@@ -228,6 +220,28 @@
                 .catch(error => {
                     console.error("Erro ao carregar o arquivo:", error);
                 });
+        }
+
+        // Função para formatar a data no formato "dia/mês/ano"
+        function formatDate(dateString) {
+            if (!dateString) return "";
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return "";
+            const day = String(date.getUTCDate()).padStart(2, "0");
+            const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+            const year = date.getUTCFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        // Função para converter a data para o formato YYYY-MM-DD (usado pelo input type="date")
+        function formatDateForInput(dateString) {
+            if (!dateString) return "";
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return "";
+            const day = String(date.getUTCDate()).padStart(2, "0");
+            const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+            const year = date.getUTCFullYear();
+            return `${year}-${month}-${day}`;
         }
 
         // Encontra os índices das colunas
@@ -257,8 +271,7 @@
             filteredData.forEach((row, rowIndex) => {
                 const tr = table.insertRow();
                 const originalIndex = data.indexOf(row);
-                // Verifica se a linha foi editada e se a "Data do Romaneio" está preenchida
-                if (editedRows.has(originalIndex) && row[columnIndexes["data do romaneio"]]) {
+                if (editedRows.has(originalIndex)) {
                     tr.classList.add("edited-row");
                 }
                 tr.onclick = () => openEditModal(rowIndex);
@@ -266,7 +279,6 @@
                     if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
                         const td = tr.insertCell();
                         let cellValue = cell || "N/A";
-                        // Formata a data no formato "dia/mês/ano"
                         if (data[0][colIndex].trim().toLowerCase() === "data do romaneio") {
                             cellValue = formatDate(cellValue);
                         }
@@ -283,7 +295,7 @@
             document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "N/A";
             document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "N/A";
             document.getElementById("IDENTIFICACAO2").value = filteredData[index][columnIndexes["identificação 2"]] || "N/A";
-            document.getElementById("DATADOROMANEIO").value = formatDateForInput(filteredData[index][columnIndexes["data do romaneio"]]); // Formata a data para o input
+            document.getElementById("DATADOROMANEIO").value = formatDateForInput(filteredData[index][columnIndexes["data do romaneio"]]);
             document.getElementById("QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
             document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
             document.getElementById("Qtde").value = filteredData[index][columnIndexes["qtde"]] || "N/A";
@@ -330,7 +342,6 @@
         // Inicia o scanner de QR Code
         function startQrScanner() {
             document.getElementById("qr-container").style.display = "block";
-            isScannerActive = true;
             document.getElementById("closeScannerBtn").style.display = "block";
 
             qrScanner = new Html5Qrcode("qr-reader");
@@ -358,7 +369,6 @@
             if (qrScanner) {
                 qrScanner.stop().then(() => {
                     document.getElementById("qr-container").style.display = "none";
-                    isScannerActive = false;
                     document.getElementById("closeScannerBtn").style.display = "none";
                 }).catch((err) => {
                     console.error(err);
@@ -396,8 +406,6 @@
                 filteredData = data.slice(1);
                 findColumnIndexes();
                 renderTable();
-            } else {
-                loadFileFromDirectory(); // Carrega o arquivo automaticamente
             }
 
             const storedEditedRows = localStorage.getItem("editedRows");
