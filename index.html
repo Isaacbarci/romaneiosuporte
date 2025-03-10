@@ -178,6 +178,7 @@
     "observação", "area m² unitário", "data cadastro", "rev", "prog. fab.", "executante", "linha", "spool",
     "localização", "status", "peso unitário", "qtde enviada", "obs romaneio", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id", "serviço",
     "identificação 2", "qtd enviada", "area m²", "peso"
+
         ];
 
         // Função para confirmar a atualização do arquivo
@@ -380,74 +381,90 @@
             });
             renderTable();
         }
-
-     function downloadExcel() {
+function downloadExcel() {
     if (!data.length) {
         alert("Nenhum dado carregado para exportar.");
         return;
     }
 
     // Índices das colunas necessárias
-    const colDataRomaneio = columnIndexes["data do romaneio"];
-    const colObservacao = columnIndexes["observação"];
-    const colQtdEnviada = columnIndexes["qtd enviada"];
-    const colPesoUnitario = columnIndexes["peso Unitário"];
-    const colAreaM2Unitario = columnIndexes["area m² Unitário"];
-    const colPesoKg = columnIndexes["peso (kg)"];
-    const colAreaSuperficie = columnIndexes["área superfície"];
-    const colDataCadastro = columnIndexes["data cadastro"]; // Será removida
+    let colDataRomaneio = columnIndexes["data do romaneio"];
+    let colObservacao = columnIndexes["observação"];
+    let colQtdEnviada = columnIndexes["qtd enviada"];
+    let colPesoUnitario = columnIndexes["peso Unitário"];
+    let colAreaM2Unitario = columnIndexes["area m² Unitário"];
+    let colPesoKg = columnIndexes["peso (kg)"];
+    let colAreaSuperficie = columnIndexes["área superfície"];
+    let colDataCadastro = columnIndexes["data cadastro"]; // Será removida
 
     // Criar uma cópia da tabela com os cálculos corrigidos
     let newData = data.map((row, index) => {
         if (index === 0) {
-            // Reorganizar os cabeçalhos, removendo "DATA CADASTRO" e trocando "DATA DO ROMANEIO" com "OBSERVAÇÃO"
+            // Criar um cabeçalho sem a coluna "DATA CADASTRO"
             let reorderedHeaders = row.filter((_, colIndex) => colIndex !== colDataCadastro);
+
+            // Ajustar índices após a remoção de "DATA CADASTRO"
+            colDataRomaneio -= colDataRomaneio > colDataCadastro ? 1 : 0;
+            colObservacao -= colObservacao > colDataCadastro ? 1 : 0;
+            colQtdEnviada -= colQtdEnviada > colDataCadastro ? 1 : 0;
+            colPesoUnitario -= colPesoUnitario > colDataCadastro ? 1 : 0;
+            colAreaM2Unitario -= colAreaM2Unitario > colDataCadastro ? 1 : 0;
+            colPesoKg -= colPesoKg > colDataCadastro ? 1 : 0;
+            colAreaSuperficie -= colAreaSuperficie > colDataCadastro ? 1 : 0;
+
+            // Trocar "DATA DO ROMANEIO" com "OBSERVAÇÃO"
             [reorderedHeaders[colDataRomaneio], reorderedHeaders[colObservacao]] =
                 [reorderedHeaders[colObservacao], reorderedHeaders[colDataRomaneio]];
+
             return reorderedHeaders;
         }
 
-        let qtdEnviadaStr = row[colQtdEnviada]?.toString().trim();
+        let reorderedRow = row.filter((_, colIndex) => colIndex !== colDataCadastro);
+
+        let qtdEnviadaStr = reorderedRow[colQtdEnviada]?.toString().trim();
         if (!qtdEnviadaStr || qtdEnviadaStr === "" || qtdEnviadaStr === "0") {
-            row[colPesoUnitario] = "";
-            row[colAreaM2Unitario] = "";
+            reorderedRow[colPesoUnitario] = "";
+            reorderedRow[colAreaM2Unitario] = "";
         } else {
             let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
-            let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
-            let areaSuperficie = parseFloat(row[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
+            let pesoKg = parseFloat(reorderedRow[colPesoKg]?.toString().replace(",", ".")) || 0;
+            let areaSuperficie = parseFloat(reorderedRow[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
 
             let pesoCalculado = (qtdEnviada > 0) ? (pesoKg / qtdEnviada) : 0;
             let areaCalculada = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
 
-            row[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
-            row[colPesoUnitario] = pesoCalculado.toFixed(2).replace(".", ",");
-            row[colAreaM2Unitario] = areaCalculada.toFixed(2).replace(".", ",");
+            reorderedRow[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
+            reorderedRow[colPesoUnitario] = pesoCalculado.toFixed(2).replace(".", ",");
+            reorderedRow[colAreaM2Unitario] = areaCalculada.toFixed(2).replace(".", ",");
         }
 
-        row[colPesoKg] = row[colPesoKg]?.toString().replace(".", ",");
-        row[colAreaSuperficie] = row[colAreaSuperficie]?.toString().replace(".", ",");
+        reorderedRow[colPesoKg] = reorderedRow[colPesoKg]?.toString().replace(".", ",");
+        reorderedRow[colAreaSuperficie] = reorderedRow[colAreaSuperficie]?.toString().replace(".", ",");
 
+        // Ajuste da Data (Corrigindo deslocamento de um dia)
         Object.keys(columnIndexes).forEach(colName => {
             if (colName.includes("data")) {
                 let colIndex = columnIndexes[colName];
-                let dateValue = row[colIndex];
+                colIndex -= colIndex > colDataCadastro ? 1 : 0; // Ajuste do índice pós remoção
+
+                let dateValue = reorderedRow[colIndex];
 
                 if (dateValue && !isNaN(new Date(dateValue))) {
                     let dateObj = new Date(dateValue);
-                    dateObj.setDate(dateObj.getDate() + 1); // Corrigir deslocamento da data
+                    dateObj.setDate(dateObj.getDate() + 1); // Corrige deslocamento
 
                     let formattedDate = `${String(dateObj.getDate()).padStart(2, "0")}/` +
                                         `${String(dateObj.getMonth() + 1).padStart(2, "0")}/` +
                                         `${dateObj.getFullYear()}`;
-                    row[colIndex] = formattedDate;
+                    reorderedRow[colIndex] = formattedDate;
                 }
             }
         });
 
-        // Reorganizar colunas, removendo "DATA CADASTRO" e trocando "DATA DO ROMANEIO" com "OBSERVAÇÃO"
-        let reorderedRow = row.filter((_, colIndex) => colIndex !== colDataCadastro);
+        // Trocar "DATA DO ROMANEIO" com "OBSERVAÇÃO" na linha de dados
         [reorderedRow[colDataRomaneio], reorderedRow[colObservacao]] =
             [reorderedRow[colObservacao], reorderedRow[colDataRomaneio]];
+
         return reorderedRow;
     });
 
@@ -469,7 +486,6 @@
     // Gerar o arquivo para download
     XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
 }
-
 
         // Carrega o arquivo ao iniciar
         document.addEventListener("DOMContentLoaded", () => {
