@@ -392,17 +392,21 @@
     }
 
     // Criar uma cópia da tabela com os cálculos corrigidos
-    let newData = data.map((row, index) => {
+    let newData = data.filter((row, index) => {
         if (index === 0) {
-            return row; // Mantém os cabeçalhos originais
+            return true; // Mantém os cabeçalhos originais
         }
 
-        let qtdEnviada = parseFloat(row[columnIndexes["qtd enviada"]]?.toString().replace(",", ".")) || 1;
+        let qtdEnviada = parseFloat(row[columnIndexes["qtd enviada"]]?.toString().replace(",", ".")) || 0;
+        if (qtdEnviada === 0) {
+            return false; // Ignora linhas onde "qtd enviada" está vazia ou zero
+        }
+
         let pesoKg = parseFloat(row[columnIndexes["peso (kg)"]]?.toString().replace(",", ".")) || 0;
         let areaSuperficie = parseFloat(row[columnIndexes["área superfície"]]?.toString().replace(",", ".")) || 0;
 
-        row[columnIndexes["peso unitário"]] = qtdEnviada > 0 ? (pesoKg / qtdEnviada).toFixed(2).replace(".", ",") : "";
-        row[columnIndexes["area m² unitário"]] = qtdEnviada > 0 ? (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",") : "";
+        row[columnIndexes["peso unitário"]] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
+        row[columnIndexes["area m² unitário"]] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
         row[columnIndexes["qtd enviada"]] = qtdEnviada.toLocaleString("pt-BR");
         row[columnIndexes["peso (kg)"]] = row[columnIndexes["peso (kg)"]]?.toString().replace(".", ",");
         row[columnIndexes["área superfície"]] = row[columnIndexes["área superfície"]]?.toString().replace(".", ",");
@@ -417,7 +421,7 @@
             }
         });
 
-        return row;
+        return true;
     });
 
     // Criar a planilha
