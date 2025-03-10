@@ -148,9 +148,8 @@
         <!-- Lista de arquivos disponíveis -->
         <option value="romaneio1.xlsx">Romaneio 1</option>
         <option value="romaneio2.xlsx">Romaneio 2</option>
-        <option value="romaneio3.xlsx">Romaneio 3</option>
     </select>
-    <button onclick="updateFile()">Atualizar Arquivo</button>
+    <button onclick="confirmUpdate()">Atualizar Arquivo</button>
     <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR ou Identificação" onkeyup="applyFilter()">
     <button onclick="downloadExcel()">Download Excel</button>
     <button onclick="startQrScanner()">Escanear QR Code</button>
@@ -192,14 +191,18 @@
             "identificação 2", "qtd enviada"
         ];
 
-        // Função para atualizar o arquivo selecionado na lista
-        function updateFile() {
+        // Função para confirmar a atualização do arquivo
+        function confirmUpdate() {
             const selectedFile = document.getElementById("fileList").value;
             if (!selectedFile) {
                 alert("Selecione um arquivo da lista para atualizar.");
                 return;
             }
-            loadSelectedFile(selectedFile);
+
+            const confirmUpdate = confirm("Deseja realmente atualizar o arquivo? Todas as alterações não salvas serão perdidas.");
+            if (confirmUpdate) {
+                loadSelectedFile(selectedFile);
+            }
         }
 
         // Carrega o arquivo selecionado da lista
