@@ -152,9 +152,10 @@
 
     <div id="editModal" class="modal">
         <input type="hidden" id="editIndex">
-        <label>Posição / TAG: <input type="text" id="POSICAOTAG" readonly></label>
-        <label>Identificação 1: <input type="text" id="IDENTIFICACAO1" readonly></label>
-        <label>Identificação 2: <input type="text" id="IDENTIFICACAO2" readonly></label>
+        <label>ISOMÉTRICO: <input type="text" id="ISOMETRICO" readonly></label>
+        <label>SPOOL: <input type="text" id="SPOOL" readonly></label>
+        <label>ÁREA: <input type="text" id="AREA" readonly></label>
+        <label>PROG FAB: <input type="text" id="PROGFAB" readonly></label>
         <label>Data do Romaneio: <input type="date" id="DATADOROMANEIO"></label>
         <label>Obs Romaneio: <input type="text" id="OBSROMANEIO"></label>
         <button class="save-btn" onclick="saveEdit()">Salvar</button>
@@ -288,9 +289,10 @@
         function openEditModal(index) {
             const originalIndex = data.indexOf(filteredData[index]);
             document.getElementById("editIndex").value = originalIndex;
-            document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "N/A";
-            document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "N/A";
-            document.getElementById("IDENTIFICACAO2").value = filteredData[index][columnIndexes["identificação 2"]] || "N/A";
+            document.getElementById("ISOMETRICO").value = filteredData[index][columnIndexes["isométrico"]] || "N/A";
+            document.getElementById("SPOOL").value = filteredData[index][columnIndexes["spool"]] || "N/A";
+            document.getElementById("AREA").value = filteredData[index][columnIndexes["área"]] || "N/A";
+            document.getElementById("PROGFAB").value = filteredData[index][columnIndexes["prog fab"]] || "N/A";
             document.getElementById("DATADOROMANEIO").value = formatDateForInput(filteredData[index][columnIndexes["data do romaneio"]]);
             document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
 
