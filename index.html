@@ -394,7 +394,11 @@
     // Criar uma cópia da tabela com os cálculos corrigidos
     let newData = data.map((row, index) => {
         if (index === 0) {
-            return row; // Mantém os cabeçalhos originais
+            // Trocar a posição das colunas "DATA DO ROMANEIO" e "OBSERVAÇÃO"
+            let headers = [...row];
+            [headers[columnIndexes["data do romaneio"]], headers[columnIndexes["observação"]]] =
+                [headers[columnIndexes["observação"]], headers[columnIndexes["data do romaneio"]]];
+            return headers;
         }
 
         let qtdEnviada = parseFloat(row[columnIndexes["qtd enviada"]]?.toString().replace(",", "."));
@@ -415,10 +419,15 @@
                 let dateValue = row[colIndex];
                 if (dateValue && !isNaN(new Date(dateValue))) {
                     let dateObj = new Date(dateValue);
+                    dateObj.setDate(dateObj.getDate() + 1); // Corrigir data para evitar um dia a menos
                     row[colIndex] = dateObj.toLocaleDateString("pt-BR");
                 }
             }
         });
+
+        // Trocar a posição das colunas "DATA DO ROMANEIO" e "OBSERVAÇÃO" nos dados
+        [row[columnIndexes["data do romaneio"]], row[columnIndexes["observação"]]] =
+            [row[columnIndexes["observação"]], row[columnIndexes["data do romaneio"]]];
 
         return row;
     });
