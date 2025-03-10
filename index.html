@@ -126,22 +126,27 @@
         .edited-row {
             background-color: lightblue !important;
         }
-        @media (max-width: 600px) {
-            .modal {
-                width: 95%;
-                padding: 15px;
-            }
-            .modal label {
-                font-size: 14px;
-            }
-            .modal input {
-                font-size: 14px;
-            }
-            .modal button {
-                font-size: 14px;
-                padding: 8px;
-            }
-        }
+   @media (max-width: 600px) {
+    .modal {
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        transform: none;
+        border-radius: 0;
+        max-width: none;
+        max-height: none;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    .modal button {
+        width: 100%;
+        font-size: 16px;
+        padding: 12px;
+    }
+}
+
     </style>
 </head>
 <body>
