@@ -397,17 +397,16 @@
             return row; // Mantém os cabeçalhos originais
         }
 
-        let qtdEnviada = parseFloat(row[columnIndexes["qtd enviada"]]?.toString().replace(",", ".")) || 0;
-        if (qtdEnviada === 0) {
-            return new Array(row.length).fill(""); // Gera uma linha vazia
-        }
-
+        let qtdEnviada = parseFloat(row[columnIndexes["qtd enviada"]]?.toString().replace(",", "."));
         let pesoKg = parseFloat(row[columnIndexes["peso (kg)"]]?.toString().replace(",", ".")) || 0;
         let areaSuperficie = parseFloat(row[columnIndexes["área superfície"]]?.toString().replace(",", ".")) || 0;
 
-        row[columnIndexes["peso unitário"]] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
-        row[columnIndexes["area m² unitário"]] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
-        row[columnIndexes["qtd enviada"]] = qtdEnviada.toLocaleString("pt-BR");
+        if (!isNaN(qtdEnviada) && qtdEnviada > 0) {
+            row[columnIndexes["peso unitário"]] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
+            row[columnIndexes["area m² unitário"]] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
+            row[columnIndexes["qtd enviada"]] = qtdEnviada.toLocaleString("pt-BR");
+        }
+
         row[columnIndexes["peso (kg)"]] = row[columnIndexes["peso (kg)"]]?.toString().replace(".", ",");
         row[columnIndexes["área superfície"]] = row[columnIndexes["área superfície"]]?.toString().replace(".", ",");
 
