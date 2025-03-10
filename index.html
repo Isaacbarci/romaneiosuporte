@@ -381,7 +381,8 @@
             });
             renderTable();
         }
-function downloadExcel() {
+
+   function downloadExcel() {
     if (!data.length) {
         alert("Nenhum dado carregado para exportar.");
         return;
@@ -422,18 +423,18 @@ function downloadExcel() {
         let reorderedRow = row.filter((_, colIndex) => colIndex !== colDataCadastro);
 
         let qtdEnviadaStr = reorderedRow[colQtdEnviada]?.toString().trim();
-        if (!qtdEnviadaStr || qtdEnviadaStr === "" || qtdEnviadaStr === "0") {
+        let qtdEnviada = qtdEnviadaStr ? parseFloat(qtdEnviadaStr.replace(",", ".")) : 0;
+
+        if (qtdEnviada <= 0) {
             reorderedRow[colPesoUnitario] = "";
             reorderedRow[colAreaM2Unitario] = "";
         } else {
-            let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
-            let pesoKg = parseFloat(reorderedRow[colPesoKg]?.toString().replace(",", ".")) || 0;
-            let areaSuperficie = parseFloat(reorderedRow[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
+            let pesoKg = reorderedRow[colPesoKg] ? parseFloat(reorderedRow[colPesoKg].toString().replace(",", ".")) : 0;
+            let areaSuperficie = reorderedRow[colAreaSuperficie] ? parseFloat(reorderedRow[colAreaSuperficie].toString().replace(",", ".")) : 0;
 
-            let pesoCalculado = (qtdEnviada > 0) ? (pesoKg / qtdEnviada) : 0;
-            let areaCalculada = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
+            let pesoCalculado = pesoKg / qtdEnviada;
+            let areaCalculada = areaSuperficie / qtdEnviada;
 
-            reorderedRow[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
             reorderedRow[colPesoUnitario] = pesoCalculado.toFixed(2).replace(".", ",");
             reorderedRow[colAreaM2Unitario] = areaCalculada.toFixed(2).replace(".", ",");
         }
@@ -486,6 +487,7 @@ function downloadExcel() {
     // Gerar o arquivo para download
     XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
 }
+
 
         // Carrega o arquivo ao iniciar
         document.addEventListener("DOMContentLoaded", () => {
