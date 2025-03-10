@@ -391,12 +391,12 @@ function downloadExcel() {
         return;
     }
 
-    // Índices das colunas necessárias
+    // Índices das colunas necessárias (com os nomes atualizados)
     const colDataRomaneio = columnIndexes["data do romaneio"];
     const colObservacao = columnIndexes["observação"];
     const colQtdEnviada = columnIndexes["qtd enviada"];
-    const colPeso = columnIndexes["peso"];
-    const colAreaM2 = columnIndexes["area m²"];
+    const colPesoUnitario = columnIndexes["peso unitário"]; // Nome atualizado
+    const colAreaM2Unitario = columnIndexes["area m² unitário"]; // Nome atualizado
     const colPesoKg = columnIndexes["peso (kg)"];
     const colAreaSuperficie = columnIndexes["área superfície"];
     const colDataCadastro = columnIndexes["data cadastro"]; // Será removida
@@ -408,29 +408,27 @@ function downloadExcel() {
             let reorderedHeaders = row.filter((_, colIndex) => colIndex !== colDataCadastro);
             [reorderedHeaders[colDataRomaneio], reorderedHeaders[colObservacao]] =
                 [reorderedHeaders[colObservacao], reorderedHeaders[colDataRomaneio]];
-
-            // Alterar os nomes das colunas
-            reorderedHeaders[colPeso] = "PESO Unitário";
-            reorderedHeaders[colAreaM2] = "AREA M² Unitário";
-
             return reorderedHeaders;
         }
 
         // Converter valores para cálculos
         let qtdEnviadaStr = row[colQtdEnviada]?.toString().trim();
-        let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
-        let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
-        let areaSuperficie = parseFloat(row[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
+        if (!qtdEnviadaStr || qtdEnviadaStr === "" || qtdEnviadaStr === "0") {
+            row[colPesoUnitario] = ""; // Nome atualizado
+            row[colAreaM2Unitario] = ""; // Nome atualizado
+        } else {
+            let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
+            let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
+            let areaSuperficie = parseFloat(row[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
 
-        // Calcular PESO Unitário e AREA M² Unitário
-        let pesoUnitario = (qtdEnviada > 0) ? (pesoKg / qtdEnviada) : 0;
-        let areaUnitario = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
+            let pesoUnitario = (qtdEnviada > 0) ? (pesoKg / qtdEnviada) : 0;
+            let areaUnitario = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
 
-        // Atribuir os valores calculados às colunas corretas
-        row[colPeso] = pesoUnitario.toFixed(2).replace(".", ",");
-        row[colAreaM2] = areaUnitario.toFixed(2).replace(".", ",");
+            row[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
+            row[colPesoUnitario] = pesoUnitario.toFixed(2).replace(".", ","); // Nome atualizado
+            row[colAreaM2Unitario] = areaUnitario.toFixed(2).replace(".", ","); // Nome atualizado
+        }
 
-        // Formatar valores de PESO (kg) e ÁREA SUPERFÍCIE
         row[colPesoKg] = row[colPesoKg]?.toString().replace(".", ",");
         row[colAreaSuperficie] = row[colAreaSuperficie]?.toString().replace(".", ",");
 
