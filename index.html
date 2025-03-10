@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -9,14 +10,14 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
+            margin: 0,1 /* Removido a margem lateral */
+            padding: 0; /* Removido o padding */
             background-color: #f4f4f9;
         }
         h2 {
             color: #333;
-            padding: 20px;
-            margin: 0;
+            padding: 20px; /* Adicionado padding ao título para espaçamento */
+            margin: 0; /* Removido margem do título */
         }
         input[type="text"], button {
             margin: 5px;
@@ -50,16 +51,11 @@
         .save-btn:hover {
             background-color: #218838;
         }
-        .table-container {
-            width: 100%;
-            overflow-x: auto; /* Permite rolagem horizontal */
-            overflow-y: hidden; /* Remove a rolagem vertical */
-            margin-top: 20px;
-        }
         table {
             border-collapse: collapse;
-            width: max-content; /* Faz a tabela ter a largura do conteúdo */
-            min-width: 100%; /* Garante que a tabela ocupe pelo menos 100% do contêiner */
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
             background-color: white;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             border: 2px solid black;
@@ -69,14 +65,18 @@
             padding: 10px;
             font-size: 14px;
             text-align: left;
-            white-space: nowrap; /* Evita quebra de linha nas células */
         }
         th {
             background-color: #007BFF;
             color: white;
+            white-space: normal;
+            word-wrap: break-word;
             text-align: left;
         }
         td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             cursor: pointer;
         }
         .modal {
@@ -133,8 +133,9 @@
     <h2>ROMANEIO DE SUPORTE</h2>
     <select id="fileList">
         <option value="">Selecione um arquivo</option>
-        <option value="Patio de Madeira.xlsx">Patio de Madeira</option>
-        <option value="Raizen.xlsx">Raizen</option>
+        <!-- Lista de arquivos disponíveis -->
+        <option value="romaneio1.xlsx">Romaneio 1</option>
+        <option value="romaneio2.xlsx">Romaneio 2</option>
     </select>
     <button onclick="confirmUpdate()">Atualizar Arquivo</button>
     <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR ou Identificação" onkeyup="applyFilter()">
@@ -146,9 +147,7 @@
         <button class="close-btn" id="closeScannerBtn" style="display: none;" onclick="stopQrScanner()">Fechar Scanner</button>
     </div>
 
-    <div class="table-container">
-        <table id="dataTable"></table>
-    </div>
+    <table id="dataTable"></table>
 
     <div id="editModal" class="modal">
         <input type="hidden" id="editIndex">
@@ -172,14 +171,13 @@
         let qrScanner;
 
         const hiddenColumns = [
-     "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
+    "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
     "área superfície", "data corte", "data acoplamento", "data solda",
     "data jato/pintura", "número romaneio", "data romaneio", "data recebimento",
     "observação", "area m² unitário", "data cadastro", "rev", "prog. fab.", "executante", "linha", "spool",
     "localização", "status", "peso unitário", "qtde enviada", "obs romaneio", "qtde", "saldo", "tipo de suporte", "tipo estrutura", "id", "serviço",
     "identificação 2", "qtd enviada", "area m²", "peso"
-
-        ];
+];
 
         // Função para confirmar a atualização do arquivo
         function confirmUpdate() {
@@ -382,14 +380,9 @@
             renderTable();
         }
 
-  function downloadExcel() {
-    if (!data || !data.length) {
+    function downloadExcel() {
+    if (!data.length) {
         alert("Nenhum dado carregado para exportar.");
-        return;
-    }
-
-    if (!columnIndexes) {
-        alert("Índices das colunas não definidos.");
         return;
     }
 
@@ -397,24 +390,21 @@
     const colDataRomaneio = columnIndexes["data do romaneio"];
     const colObservacao = columnIndexes["observação"];
     const colQtdEnviada = columnIndexes["qtd enviada"];
-    const colPesoUnitario = columnIndexes["peso Unitário"];
-    const colAreaM2Unitario = columnIndexes["area m² Unitário"];
+    const colPeso = columnIndexes["peso"];
+    const colAreaM2 = columnIndexes["area m²"];
     const colPesoKg = columnIndexes["peso (kg)"];
     const colAreaSuperficie = columnIndexes["área superfície"];
     const colDataCadastro = columnIndexes["data cadastro"]; // Será removida
 
-    // Verificar se todos os índices de colunas são válidos
-    const requiredColumns = [colDataRomaneio, colObservacao, colQtdEnviada, colPesoUnitario, colAreaM2Unitario, colPesoKg, colAreaSuperficie, colDataCadastro];
-    if (requiredColumns.some(col => col === undefined)) {
-        alert("Algumas colunas necessárias não foram encontradas.");
-        return;
-    }
-
     // Criar uma cópia da tabela com os cálculos corrigidos
-    const newData = data.map((row, index) => {
+    let newData = data.map((row, index) => {
         if (index === 0) {
-            // Criar um cabeçalho sem a coluna "DATA CADASTRO"
-            const reorderedHeaders = row.filter((_, colIndex) => colIndex !== colDataCadastro);
+            // Renomear os cabeçalhos
+            let reorderedHeaders = row.map(header => {
+                if (header === "peso") return "PESO Unitário";
+                if (header === "area m²") return "AREA M² Unitário";
+                return header;
+            }).filter((_, colIndex) => colIndex !== colDataCadastro);
 
             // Trocar "DATA DO ROMANEIO" com "OBSERVAÇÃO"
             [reorderedHeaders[colDataRomaneio], reorderedHeaders[colObservacao]] =
@@ -423,52 +413,45 @@
             return reorderedHeaders;
         }
 
-        let reorderedRow = row.filter((_, colIndex) => colIndex !== colDataCadastro);
-
-        const qtdEnviadaStr = reorderedRow[colQtdEnviada]?.toString().trim();
-        const qtdEnviada = qtdEnviadaStr ? parseFloat(qtdEnviadaStr.replace(",", ".")) : 0;
-
-        if (qtdEnviada <= 0) {
-            reorderedRow[colPesoUnitario] = "";
-            reorderedRow[colAreaM2Unitario] = "";
+        let qtdEnviadaStr = row[colQtdEnviada]?.toString().trim();
+        if (!qtdEnviadaStr || qtdEnviadaStr === "" || qtdEnviadaStr === "0") {
+            row[colPeso] = "";
+            row[colAreaM2] = "";
         } else {
-            const pesoKg = reorderedRow[colPesoKg] ? parseFloat(reorderedRow[colPesoKg].toString().replace(",", ".")) : 0;
-            const areaSuperficie = reorderedRow[colAreaSuperficie] ? parseFloat(reorderedRow[colAreaSuperficie].toString().replace(",", ".")) : 0;
+            let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
+            let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
+            let areaSuperficie = parseFloat(row[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
 
-            const pesoCalculado = pesoKg / qtdEnviada;
-            const areaCalculada = areaSuperficie / qtdEnviada;
+            let pesoCalculado = (qtdEnviada > 0) ? (pesoKg / qtdEnviada) : 0;
+            let areaCalculada = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
 
-            reorderedRow[colPesoUnitario] = pesoCalculado.toFixed(2).replace(".", ",");
-            reorderedRow[colAreaM2Unitario] = areaCalculada.toFixed(2).replace(".", ",");
+            row[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
+            row[colPeso] = pesoCalculado.toFixed(2).replace(".", ",");
+            row[colAreaM2] = areaCalculada.toFixed(2).replace(".", ",");
         }
 
-        reorderedRow[colPesoKg] = reorderedRow[colPesoKg]?.toString().replace(".", ",");
-        reorderedRow[colAreaSuperficie] = reorderedRow[colAreaSuperficie]?.toString().replace(".", ",");
+        row[colPesoKg] = row[colPesoKg]?.toString().replace(".", ",");
+        row[colAreaSuperficie] = row[colAreaSuperficie]?.toString().replace(".", ",");
 
-        // Ajuste da Data (Corrigindo deslocamento de um dia)
         Object.keys(columnIndexes).forEach(colName => {
             if (colName.includes("data")) {
                 let colIndex = columnIndexes[colName];
-                colIndex -= colIndex > colDataCadastro ? 1 : 0; // Ajuste do índice pós remoção
-
-                const dateValue = reorderedRow[colIndex];
+                let dateValue = row[colIndex];
 
                 if (dateValue && !isNaN(new Date(dateValue))) {
-                    const dateObj = new Date(dateValue);
-                    dateObj.setDate(dateObj.getDate() + 1); // Corrige deslocamento
-
-                    const formattedDate = `${String(dateObj.getDate()).padStart(2, "0")}/` +
-                                          `${String(dateObj.getMonth() + 1).padStart(2, "0")}/` +
-                                          `${dateObj.getFullYear()}`;
-                    reorderedRow[colIndex] = formattedDate;
+                    let dateObj = new Date(dateValue);
+                    let formattedDate = `${String(dateObj.getDate()).padStart(2, "0")}/` +
+                                        `${String(dateObj.getMonth() + 1).padStart(2, "0")}/` +
+                                        `${dateObj.getFullYear()}`;
+                    row[colIndex] = formattedDate;
                 }
             }
         });
 
-        // Trocar "DATA DO ROMANEIO" com "OBSERVAÇÃO" na linha de dados
+        // Reorganizar colunas, removendo "DATA CADASTRO" e trocando "DATA DO ROMANEIO" com "OBSERVAÇÃO"
+        let reorderedRow = row.filter((_, colIndex) => colIndex !== colDataCadastro);
         [reorderedRow[colDataRomaneio], reorderedRow[colObservacao]] =
             [reorderedRow[colObservacao], reorderedRow[colDataRomaneio]];
-
         return reorderedRow;
     });
 
@@ -476,8 +459,8 @@
     const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
 
     // Ajuste automático da largura das colunas
-    const columnWidths = newData[0].map((col, index) => {
-        const maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0));
+    let columnWidths = newData[0].map((col, index) => {
+        let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
         return { wch: maxLength + 2 };
     });
 
