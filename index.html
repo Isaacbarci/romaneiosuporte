@@ -391,12 +391,12 @@ function downloadExcel() {
         return;
     }
 
-    // Índices das colunas necessárias (com os nomes atualizados)
+    // Índices das colunas necessárias (com os nomes trocados)
     const colDataRomaneio = columnIndexes["data do romaneio"];
     const colObservacao = columnIndexes["observação"];
     const colQtdEnviada = columnIndexes["qtd enviada"];
-    const colPesoUnitario = columnIndexes["peso unitário"]; // Nome atualizado
-    const colAreaM2Unitario = columnIndexes["area m² unitário"]; // Nome atualizado
+    const colPesoUnitario = columnIndexes["peso"]; // Nome trocado
+    const colAreaM2Unitario = columnIndexes["area m²"]; // Nome trocado
     const colPesoKg = columnIndexes["peso (kg)"];
     const colAreaSuperficie = columnIndexes["área superfície"];
     const colDataCadastro = columnIndexes["data cadastro"]; // Será removida
@@ -414,8 +414,8 @@ function downloadExcel() {
         // Converter valores para cálculos
         let qtdEnviadaStr = row[colQtdEnviada]?.toString().trim();
         if (!qtdEnviadaStr || qtdEnviadaStr === "" || qtdEnviadaStr === "0") {
-            row[colPesoUnitario] = ""; // Nome atualizado
-            row[colAreaM2Unitario] = ""; // Nome atualizado
+            row[colPesoUnitario] = ""; // Nome trocado
+            row[colAreaM2Unitario] = ""; // Nome trocado
         } else {
             let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
             let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
@@ -425,8 +425,8 @@ function downloadExcel() {
             let areaUnitario = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
 
             row[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
-            row[colPesoUnitario] = pesoUnitario.toFixed(2).replace(".", ","); // Nome atualizado
-            row[colAreaM2Unitario] = areaUnitario.toFixed(2).replace(".", ","); // Nome atualizado
+            row[colPesoUnitario] = pesoUnitario.toFixed(2).replace(".", ","); // Nome trocado
+            row[colAreaM2Unitario] = areaUnitario.toFixed(2).replace(".", ","); // Nome trocado
         }
 
         row[colPesoKg] = row[colPesoKg]?.toString().replace(".", ",");
