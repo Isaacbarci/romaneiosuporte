@@ -392,7 +392,7 @@
     const colObservacao = columnIndexes["observação"];
     const colQtdEnviada = columnIndexes["qtd enviada"];
     const colPesoUnitario = columnIndexes["PESO Unitário"];
-    const colAreaM2Unitario = columnIndexes["ÁREA M² Unitário"];
+    const colAreaM2Unitario = columnIndexes["ÁREA M²"];
     const colPesoKg = columnIndexes["peso (kg)"];
     const colAreaSuperficie = columnIndexes["área superfície"];
     const colDataCadastro = columnIndexes["data cadastro"]; // Será removida
@@ -433,12 +433,13 @@
         if (newRow[colPesoKg]) newRow[colPesoKg] = newRow[colPesoKg].toString().replace(".", ",");
         if (newRow[colAreaSuperficie]) newRow[colAreaSuperficie] = newRow[colAreaSuperficie].toString().replace(".", ",");
 
-        // Corrigir datas no formato DD/MM/AAAA
+        // Corrigir datas no formato DD/MM/AAAA e ajustar UTC corretamente
         Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
             if (colName.includes("data")) {
                 let dateValue = newRow[colIndex];
                 if (dateValue && !isNaN(Date.parse(dateValue))) {
                     let dateObj = new Date(dateValue);
+                    dateObj.setMinutes(dateObj.getMinutes() + dateObj.getTimezoneOffset()); // Ajusta UTC
                     newRow[colIndex] = dateObj.toLocaleDateString("pt-BR", {
                         day: "2-digit",
                         month: "2-digit",
