@@ -391,8 +391,8 @@
     const colDataRomaneio = columnIndexes["data do romaneio"];
     const colObservacao = columnIndexes["observação"];
     const colQtdEnviada = columnIndexes["qtd enviada"];
-    const colPesoUnitario = columnIndexes["peso Unitário"];
-    const colAreaM2Unitario = columnIndexes["area m² Unitário"];
+    const colPesoUnitario = columnIndexes["PESO Unitário"];
+    const colAreaM2Unitario = columnIndexes["ÁREA M² Unitário"];
     const colPesoKg = columnIndexes["peso (kg)"];
     const colAreaSuperficie = columnIndexes["área superfície"];
     const colDataCadastro = columnIndexes["data cadastro"]; // Será removida
@@ -421,8 +421,8 @@
             let pesoKg = parseFloat((newRow[colPesoKg] || "0").toString().replace(",", ".")) || 0;
             let areaSuperficie = parseFloat((newRow[colAreaSuperficie] || "0").toString().replace(",", ".")) || 0;
 
-            let pesoCalculado = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
-            let areaCalculada = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
+            let pesoCalculado = qtdEnviada > 0 ? (pesoKg / qtdEnviada).toFixed(2).replace(".", ",") : "";
+            let areaCalculada = qtdEnviada > 0 ? (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",") : "";
 
             newRow[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
             newRow[colPesoUnitario] = pesoCalculado;
@@ -472,8 +472,6 @@
     XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
     XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
 }
-
-
 
         // Carrega o arquivo ao iniciar
         document.addEventListener("DOMContentLoaded", () => {
