@@ -382,7 +382,7 @@
         }
 
     function downloadExcel() {
-    if (!data.length) {
+    if (!data || !data.length) {
         alert("Nenhum dado carregado para exportar.");
         return;
     }
@@ -399,43 +399,44 @@
 
     // Criar uma cópia da tabela com os cálculos corrigidos
     let newData = data.map((row, index) => {
-        let newRow = [...row]; // Cópia do array original para evitar mutação
+        let newRow = row.slice(); // Criar cópia para evitar mutação do original
 
         if (index === 0) {
-            // Reorganizar os cabeçalhos, removendo "DATA CADASTRO" e trocando "DATA DO ROMANEIO" com "OBSERVAÇÃO"
+            // Remover "DATA CADASTRO" e trocar "DATA DO ROMANEIO" com "OBSERVAÇÃO"
             newRow = newRow.filter((_, colIndex) => colIndex !== colDataCadastro);
-            [newRow[colDataRomaneio], newRow[colObservacao]] =
-                [newRow[colObservacao], newRow[colDataRomaneio]];
+            if (colDataRomaneio !== undefined && colObservacao !== undefined) {
+                [newRow[colDataRomaneio], newRow[colObservacao]] =
+                    [newRow[colObservacao], newRow[colDataRomaneio]];
+            }
             return newRow;
         }
 
-        let qtdEnviadaStr = newRow[colQtdEnviada]?.toString().trim();
-        let qtdEnviada = qtdEnviadaStr ? parseFloat(qtdEnviadaStr.replace(",", ".")) : 0;
+        // Processamento da quantidade enviada
+        let qtdEnviada = parseFloat((newRow[colQtdEnviada] || "0").toString().replace(",", ".")) || 0;
 
-        if (!qtdEnviada) {
+        if (qtdEnviada === 0) {
             newRow[colPesoUnitario] = "";
             newRow[colAreaM2Unitario] = "";
         } else {
-            let pesoKg = parseFloat(newRow[colPesoKg]?.toString().replace(",", ".")) || 0;
-            let areaSuperficie = parseFloat(newRow[colAreaSuperficie]?.toString().replace(",", ".")) || 0;
+            let pesoKg = parseFloat((newRow[colPesoKg] || "0").toString().replace(",", ".")) || 0;
+            let areaSuperficie = parseFloat((newRow[colAreaSuperficie] || "0").toString().replace(",", ".")) || 0;
 
-            let pesoCalculado = (qtdEnviada > 0) ? (pesoKg / qtdEnviada) : 0;
-            let areaCalculada = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
+            let pesoCalculado = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
+            let areaCalculada = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
 
             newRow[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
-            newRow[colPesoUnitario] = pesoCalculado.toFixed(2).replace(".", ",");
-            newRow[colAreaM2Unitario] = areaCalculada.toFixed(2).replace(".", ",");
+            newRow[colPesoUnitario] = pesoCalculado;
+            newRow[colAreaM2Unitario] = areaCalculada;
         }
 
         // Ajustar valores numéricos para o formato adequado
-        newRow[colPesoKg] = newRow[colPesoKg]?.toString().replace(".", ",");
-        newRow[colAreaSuperficie] = newRow[colAreaSuperficie]?.toString().replace(".", ",");
+        if (newRow[colPesoKg]) newRow[colPesoKg] = newRow[colPesoKg].toString().replace(".", ",");
+        if (newRow[colAreaSuperficie]) newRow[colAreaSuperficie] = newRow[colAreaSuperficie].toString().replace(".", ",");
 
-        // Corrigir o formato de todas as colunas que contenham datas
+        // Corrigir datas no formato DD/MM/AAAA
         Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
             if (colName.includes("data")) {
                 let dateValue = newRow[colIndex];
-
                 if (dateValue && !isNaN(Date.parse(dateValue))) {
                     let dateObj = new Date(dateValue);
                     newRow[colIndex] = dateObj.toLocaleDateString("pt-BR", {
@@ -447,10 +448,12 @@
             }
         });
 
-        // Reorganizar colunas, removendo "DATA CADASTRO" e trocando "DATA DO ROMANEIO" com "OBSERVAÇÃO"
+        // Remover "DATA CADASTRO" e trocar "DATA DO ROMANEIO" com "OBSERVAÇÃO"
         newRow = newRow.filter((_, colIndex) => colIndex !== colDataCadastro);
-        [newRow[colDataRomaneio], newRow[colObservacao]] =
-            [newRow[colObservacao], newRow[colDataRomaneio]];
+        if (colDataRomaneio !== undefined && colObservacao !== undefined) {
+            [newRow[colDataRomaneio], newRow[colObservacao]] =
+                [newRow[colObservacao], newRow[colDataRomaneio]];
+        }
 
         return newRow;
     });
