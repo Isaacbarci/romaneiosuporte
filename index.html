@@ -126,7 +126,7 @@
         .edited-row {
             background-color: lightblue !important;
         }
-   @media (max-width: 600px) {
+  @media (max-width: 600px) {
     .modal {
         width: 100%;
         height: 100%;
@@ -138,6 +138,9 @@
         max-height: none;
         overflow-y: auto;
         padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
 
     .modal button {
@@ -145,7 +148,20 @@
         font-size: 16px;
         padding: 12px;
     }
+
+    .close-btn {
+        background-color: #dc3545;
+        color: white;
+        font-size: 16px;
+        padding: 12px;
+        width: 100%;
+        text-align: center;
+        margin-top: auto;
+        position: relative;
+        bottom: 0;
+    }
 }
+
 
     </style>
 </head>
