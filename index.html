@@ -391,8 +391,8 @@
     const colDataRomaneio = columnIndexes["data do romaneio"];
     const colObservacao = columnIndexes["observação"];
     const colQtdEnviada = columnIndexes["qtd enviada"];
-    const colPeso = columnIndexes["peso"];
-    const colAreaM2 = columnIndexes["area m²"];
+    const colPesoUnitario = columnIndexes["peso Unitário"];
+    const colAreaM2Unitario = columnIndexes["area m² Unitário"];
     const colPesoKg = columnIndexes["peso (kg)"];
     const colAreaSuperficie = columnIndexes["área superfície"];
     const colDataCadastro = columnIndexes["data cadastro"]; // Será removida
@@ -409,8 +409,8 @@
 
         let qtdEnviadaStr = row[colQtdEnviada]?.toString().trim();
         if (!qtdEnviadaStr || qtdEnviadaStr === "" || qtdEnviadaStr === "0") {
-            row[colPeso] = "";
-            row[colAreaM2] = "";
+            row[colPesoUnitario] = "";
+            row[colAreaM2Unitario] = "";
         } else {
             let qtdEnviada = parseFloat(qtdEnviadaStr.replace(",", ".")) || 1;
             let pesoKg = parseFloat(row[colPesoKg]?.toString().replace(",", ".")) || 0;
@@ -420,8 +420,8 @@
             let areaCalculada = (qtdEnviada > 0) ? (areaSuperficie / qtdEnviada) : 0;
 
             row[colQtdEnviada] = qtdEnviada.toLocaleString("pt-BR");
-            row[colPeso] = pesoCalculado.toFixed(2).replace(".", ",");
-            row[colAreaM2] = areaCalculada.toFixed(2).replace(".", ",");
+            row[colPesoUnitario] = pesoCalculado.toFixed(2).replace(".", ",");
+            row[colAreaM2Unitario] = areaCalculada.toFixed(2).replace(".", ",");
         }
 
         row[colPesoKg] = row[colPesoKg]?.toString().replace(".", ",");
