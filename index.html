@@ -392,14 +392,14 @@
     }
 
     // Criar uma cópia da tabela com os cálculos corrigidos
-    let newData = data.filter((row, index) => {
+    let newData = data.map((row, index) => {
         if (index === 0) {
-            return true; // Mantém os cabeçalhos originais
+            return row; // Mantém os cabeçalhos originais
         }
 
         let qtdEnviada = parseFloat(row[columnIndexes["qtd enviada"]]?.toString().replace(",", ".")) || 0;
         if (qtdEnviada === 0) {
-            return false; // Ignora linhas onde "qtd enviada" está vazia ou zero
+            return new Array(row.length).fill(""); // Gera uma linha vazia
         }
 
         let pesoKg = parseFloat(row[columnIndexes["peso (kg)"]]?.toString().replace(",", ".")) || 0;
@@ -421,7 +421,7 @@
             }
         });
 
-        return true;
+        return row;
     });
 
     // Criar a planilha
