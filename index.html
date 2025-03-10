@@ -379,6 +379,7 @@
             });
             renderTable();
         }
+
 function downloadExcel() {
     if (!data.length) {
         alert("Nenhum dado carregado para exportar.");
@@ -472,7 +473,6 @@ function downloadExcel() {
     // Gerar o arquivo para download
     XLSX.writeFile(newWorkbook, "tabela_editada.xlsx");
 }
-
 
 
 
