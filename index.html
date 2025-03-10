@@ -382,36 +382,39 @@
             renderTable();
         }
 
-   function downloadExcel() {
-    if (!data.length) {
+  function downloadExcel() {
+    if (!data || !data.length) {
         alert("Nenhum dado carregado para exportar.");
         return;
     }
 
+    if (!columnIndexes) {
+        alert("Índices das colunas não definidos.");
+        return;
+    }
+
     // Índices das colunas necessárias
-    let colDataRomaneio = columnIndexes["data do romaneio"];
-    let colObservacao = columnIndexes["observação"];
-    let colQtdEnviada = columnIndexes["qtd enviada"];
-    let colPesoUnitario = columnIndexes["peso Unitário"];
-    let colAreaM2Unitario = columnIndexes["area m² Unitário"];
-    let colPesoKg = columnIndexes["peso (kg)"];
-    let colAreaSuperficie = columnIndexes["área superfície"];
-    let colDataCadastro = columnIndexes["data cadastro"]; // Será removida
+    const colDataRomaneio = columnIndexes["data do romaneio"];
+    const colObservacao = columnIndexes["observação"];
+    const colQtdEnviada = columnIndexes["qtd enviada"];
+    const colPesoUnitario = columnIndexes["peso Unitário"];
+    const colAreaM2Unitario = columnIndexes["area m² Unitário"];
+    const colPesoKg = columnIndexes["peso (kg)"];
+    const colAreaSuperficie = columnIndexes["área superfície"];
+    const colDataCadastro = columnIndexes["data cadastro"]; // Será removida
+
+    // Verificar se todos os índices de colunas são válidos
+    const requiredColumns = [colDataRomaneio, colObservacao, colQtdEnviada, colPesoUnitario, colAreaM2Unitario, colPesoKg, colAreaSuperficie, colDataCadastro];
+    if (requiredColumns.some(col => col === undefined)) {
+        alert("Algumas colunas necessárias não foram encontradas.");
+        return;
+    }
 
     // Criar uma cópia da tabela com os cálculos corrigidos
-    let newData = data.map((row, index) => {
+    const newData = data.map((row, index) => {
         if (index === 0) {
             // Criar um cabeçalho sem a coluna "DATA CADASTRO"
-            let reorderedHeaders = row.filter((_, colIndex) => colIndex !== colDataCadastro);
-
-            // Ajustar índices após a remoção de "DATA CADASTRO"
-            colDataRomaneio -= colDataRomaneio > colDataCadastro ? 1 : 0;
-            colObservacao -= colObservacao > colDataCadastro ? 1 : 0;
-            colQtdEnviada -= colQtdEnviada > colDataCadastro ? 1 : 0;
-            colPesoUnitario -= colPesoUnitario > colDataCadastro ? 1 : 0;
-            colAreaM2Unitario -= colAreaM2Unitario > colDataCadastro ? 1 : 0;
-            colPesoKg -= colPesoKg > colDataCadastro ? 1 : 0;
-            colAreaSuperficie -= colAreaSuperficie > colDataCadastro ? 1 : 0;
+            const reorderedHeaders = row.filter((_, colIndex) => colIndex !== colDataCadastro);
 
             // Trocar "DATA DO ROMANEIO" com "OBSERVAÇÃO"
             [reorderedHeaders[colDataRomaneio], reorderedHeaders[colObservacao]] =
@@ -422,18 +425,18 @@
 
         let reorderedRow = row.filter((_, colIndex) => colIndex !== colDataCadastro);
 
-        let qtdEnviadaStr = reorderedRow[colQtdEnviada]?.toString().trim();
-        let qtdEnviada = qtdEnviadaStr ? parseFloat(qtdEnviadaStr.replace(",", ".")) : 0;
+        const qtdEnviadaStr = reorderedRow[colQtdEnviada]?.toString().trim();
+        const qtdEnviada = qtdEnviadaStr ? parseFloat(qtdEnviadaStr.replace(",", ".")) : 0;
 
         if (qtdEnviada <= 0) {
             reorderedRow[colPesoUnitario] = "";
             reorderedRow[colAreaM2Unitario] = "";
         } else {
-            let pesoKg = reorderedRow[colPesoKg] ? parseFloat(reorderedRow[colPesoKg].toString().replace(",", ".")) : 0;
-            let areaSuperficie = reorderedRow[colAreaSuperficie] ? parseFloat(reorderedRow[colAreaSuperficie].toString().replace(",", ".")) : 0;
+            const pesoKg = reorderedRow[colPesoKg] ? parseFloat(reorderedRow[colPesoKg].toString().replace(",", ".")) : 0;
+            const areaSuperficie = reorderedRow[colAreaSuperficie] ? parseFloat(reorderedRow[colAreaSuperficie].toString().replace(",", ".")) : 0;
 
-            let pesoCalculado = pesoKg / qtdEnviada;
-            let areaCalculada = areaSuperficie / qtdEnviada;
+            const pesoCalculado = pesoKg / qtdEnviada;
+            const areaCalculada = areaSuperficie / qtdEnviada;
 
             reorderedRow[colPesoUnitario] = pesoCalculado.toFixed(2).replace(".", ",");
             reorderedRow[colAreaM2Unitario] = areaCalculada.toFixed(2).replace(".", ",");
@@ -448,15 +451,15 @@
                 let colIndex = columnIndexes[colName];
                 colIndex -= colIndex > colDataCadastro ? 1 : 0; // Ajuste do índice pós remoção
 
-                let dateValue = reorderedRow[colIndex];
+                const dateValue = reorderedRow[colIndex];
 
                 if (dateValue && !isNaN(new Date(dateValue))) {
-                    let dateObj = new Date(dateValue);
+                    const dateObj = new Date(dateValue);
                     dateObj.setDate(dateObj.getDate() + 1); // Corrige deslocamento
 
-                    let formattedDate = `${String(dateObj.getDate()).padStart(2, "0")}/` +
-                                        `${String(dateObj.getMonth() + 1).padStart(2, "0")}/` +
-                                        `${dateObj.getFullYear()}`;
+                    const formattedDate = `${String(dateObj.getDate()).padStart(2, "0")}/` +
+                                          `${String(dateObj.getMonth() + 1).padStart(2, "0")}/` +
+                                          `${dateObj.getFullYear()}`;
                     reorderedRow[colIndex] = formattedDate;
                 }
             }
@@ -473,8 +476,8 @@
     const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
 
     // Ajuste automático da largura das colunas
-    let columnWidths = newData[0].map((col, index) => {
-        let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
+    const columnWidths = newData[0].map((col, index) => {
+        const maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0));
         return { wch: maxLength + 2 };
     });
 
