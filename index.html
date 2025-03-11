@@ -267,13 +267,24 @@
             });
         }
 
-        function applyFilter() {
-            const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
-            filteredData = data.slice(1).filter(row => {
-                return row.some(cell => String(cell).toLowerCase().includes(filterValue));
-            });
-            renderTable();
-        }
+     function applyFilter() {
+    const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
+
+    // Verifica se a coluna "Identificação 1" existe
+    const identificacao1Index = columnIndexes["identificação 1"];
+    if (identificacao1Index === undefined) {
+        console.error("Coluna 'Identificação 1' não encontrada.");
+        return;
+    }
+
+    // Filtra os dados com base na coluna "Identificação 1"
+    filteredData = data.slice(1).filter(row => {
+        const identificacao1Value = String(row[identificacao1Index]).toLowerCase();
+        return identificacao1Value.includes(filterValue);
+    });
+
+    renderTable();
+}
 
         function renderTable() {
             const table = document.getElementById("dataTable");
