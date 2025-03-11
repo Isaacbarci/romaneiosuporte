@@ -468,15 +468,21 @@ function compressData(data) {
     return btoa(JSON.stringify(data));
 }
 
+// Funções para compressão e descompressão de dados
+function compressData(data) {
+    return btoa(JSON.stringify(data)); // Converte os dados para uma string codificada em Base64
+}
+
 function decompressData(compressedData) {
     try {
-        return JSON.parse(atob(compressedData));
+        return JSON.parse(atob(compressedData)); // Converte de volta para o objeto original
     } catch (error) {
         console.error("Erro ao descomprimir dados:", error);
         return null;
     }
 }
 
+// Salva dados no localStorage
 function saveToLocalStorage(key, data) {
     try {
         const compressedData = compressData(data);
@@ -487,6 +493,7 @@ function saveToLocalStorage(key, data) {
     }
 }
 
+// Carrega dados do localStorage
 function loadFromLocalStorage(key) {
     const compressedData = localStorage.getItem(key);
     if (compressedData) {
@@ -495,30 +502,53 @@ function loadFromLocalStorage(key) {
     return null;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    // Carrega os dados do localStorage (se existirem)
+// Variáveis globais (certifique-se de que estão definidas)
+let data = []; // Dados principais
+let filteredData = []; // Dados filtrados
+let editedRows = new Set(); // Linhas editadas
+
+// Função para salvar o estado atual no localStorage
+function saveAppState() {
+    saveToLocalStorage("uploadedData", data); // Salva os dados principais
+    saveToLocalStorage("editedRows", Array.from(editedRows)); // Salva as linhas editadas (converte Set para array)
+}
+
+// Função para carregar o estado do localStorage
+function loadAppState() {
     const storedData = loadFromLocalStorage("uploadedData");
     if (storedData) {
-        // Certifique-se de que `data` e `filteredData` estão definidos no escopo correto
         data = storedData;
-        filteredData = data.slice(1);
-        findColumnIndexes();
-        renderTable();
+        filteredData = data.slice(1); // Atualiza os dados filtrados
+        findColumnIndexes(); // Supondo que essa função exista
+        renderTable(); // Supondo que essa função exista
     }
 
     const storedEditedRows = loadFromLocalStorage("editedRows");
     if (storedEditedRows) {
-        // Converte o array de volta para um Set
-        editedRows = new Set(storedEditedRows);
-        renderTable();
+        editedRows = new Set(storedEditedRows); // Converte o array de volta para Set
+        renderTable(); // Renderiza a tabela novamente
     }
+}
+
+// Evento que é executado quando a página é carregada
+document.addEventListener("DOMContentLoaded", () => {
+    loadAppState(); // Carrega o estado salvo ao carregar a página
 });
 
-// Exemplo de como salvar `editedRows` no localStorage
-function saveEditedRows() {
-    // Converte o Set para um array antes de salvar
-    const editedRowsArray = Array.from(editedRows);
-    saveToLocalStorage("editedRows", editedRowsArray);
+// Exemplo de como salvar o estado quando os dados são modificados
+function updateData(newData) {
+    data = newData;
+    filteredData = data.slice(1);
+    findColumnIndexes();
+    renderTable();
+    saveAppState(); // Salva o estado após modificar os dados
+}
+
+// Exemplo de como adicionar uma linha editada
+function addEditedRow(rowIndex) {
+    editedRows.add(rowIndex);
+    renderTable();
+    saveAppState(); // Salva o estado após modificar as linhas editadas
 }
     </script>
 </body>
