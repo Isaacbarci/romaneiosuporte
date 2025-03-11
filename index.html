@@ -322,11 +322,11 @@ function renderTable() {
 
         // Abre o modal de edição
        function openEditModal(index) {
-    const originalIndex = data.findIndex(row => row === filteredData[index]);
+    const originalIndex = data.findIndex(row => JSON.stringify(row) === JSON.stringify(filteredData[index]));
 
-    if (originalIndex === -1) return;
+    if (originalIndex === -1) return; // Evita erro caso o índice não seja encontrado
 
-    document.getElementById("editIndex").value = originalIndex; // Agora pega o índice correto
+    document.getElementById("editIndex").value = originalIndex; // Armazena o índice correto
 
     document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "";
     document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "";
