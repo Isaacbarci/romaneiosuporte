@@ -196,24 +196,34 @@
 
         // Carrega o arquivo selecionado da lista
         function loadSelectedFile(fileName) {
-            fetch(fileName)
-                .then(response => response.arrayBuffer())
-                .then(arrayBuffer => {
-                    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
-                    data = jsonData;
-                    localStorage.setItem("uploadedData", JSON.stringify(data));
-                    filteredData = data.slice(1);
-                    editedRows.clear();
-                    localStorage.removeItem("editedRows");
-                    findColumnIndexes();
-                    renderTable();
-                })
-                .catch(error => {
-                    console.error("Erro ao carregar o arquivo:", error);
-                });
-        }
+    fetch(fileName)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erro ao carregar arquivo: ${response.statusText}`);
+            }
+            return response.arrayBuffer();
+        })
+        .then(arrayBuffer => {
+            const workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
+
+            data = jsonData;
+            localStorage.setItem("uploadedData", JSON.stringify(data));
+
+            filteredData = data.slice(1);
+            editedRows.clear();
+            localStorage.removeItem("editedRows");
+
+            findColumnIndexes();
+            renderTable();
+        })
+        .catch(error => {
+            console.error("Erro ao carregar o arquivo:", error);
+            alert("Erro ao carregar o arquivo. Verifique se o nome está correto.");
+        });
+}
+
 
        function formatDate(dateString) {
     if (!dateString) return "";
@@ -251,7 +261,7 @@
         // Renderiza a tabela de forma otimizada
 function renderTable() {
     const table = document.getElementById("dataTable");
-    table.innerHTML = "";
+    table.innerHTML = ""; // Limpa a tabela antes de renderizar
 
     if (!data.length) return;
 
@@ -269,19 +279,21 @@ function renderTable() {
     fragment.appendChild(headerRow);
 
     filteredData.forEach((row, index) => {
-        const originalIndex = data.findIndex(r => JSON.stringify(r) === JSON.stringify(row));
+        // Usa a referência direta ao índice no `data` ao invés de `findIndex`
+        const originalIndex = data.indexOf(row);
+        if (originalIndex === -1) return;
 
         const tr = document.createElement("tr");
-        tr.onclick = () => openEditModal(index);
+        tr.onclick = () => openEditModal(originalIndex); // Usa originalIndex corretamente
 
         row.forEach((cell, colIndex) => {
             if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
                 const td = document.createElement("td");
 
                 if (data[0][colIndex].toLowerCase() === "data do romaneio") {
-                    td.textContent = formatDate(row[colIndex]);
+                    td.textContent = formatDate(cell);
                 } else {
-                    td.textContent = cell ? cell : "";
+                    td.textContent = cell || ""; // Remove o "N/A" e mantém células vazias
                 }
 
                 tr.appendChild(td);
@@ -325,45 +337,41 @@ function renderTable() {
 
         // Abre o modal de edição
    function openEditModal(index) {
-    // Pega a referência exata do índice no `data` baseado em `filteredData`
-    const originalIndex = data.findIndex(row => JSON.stringify(row) === JSON.stringify(filteredData[index]));
+    if (index < 0 || index >= data.length) return;
 
-    if (originalIndex === -1) return;
+    document.getElementById("editIndex").value = index; // Usa índice correto direto de `data`
 
-    document.getElementById("editIndex").value = originalIndex; // Salva o índice correto
-
-    document.getElementById("POSICAOTAG").value = data[originalIndex][columnIndexes["posição / tag"]] || "";
-    document.getElementById("IDENTIFICACAO1").value = data[originalIndex][columnIndexes["identificação 1"]] || "";
-    document.getElementById("IDENTIFICACAO2").value = data[originalIndex][columnIndexes["identificação 2"]] || "";
-    document.getElementById("DATADOROMANEIO").value = formatDateForInput(data[originalIndex][columnIndexes["data do romaneio"]]);
-    document.getElementById("QTDENVIADA").value = data[originalIndex][columnIndexes["qtd enviada"]] || "";
-    document.getElementById("OBSROMANEIO").value = data[originalIndex][columnIndexes["obs romaneio"]] || "";
-    document.getElementById("Qtde").value = data[originalIndex][columnIndexes["qtde"]] || "";
-    document.getElementById("Saldo").value = data[originalIndex][columnIndexes["saldo"]] || "";
+    document.getElementById("POSICAOTAG").value = data[index][columnIndexes["posição / tag"]] || "";
+    document.getElementById("IDENTIFICACAO1").value = data[index][columnIndexes["identificação 1"]] || "";
+    document.getElementById("IDENTIFICACAO2").value = data[index][columnIndexes["identificação 2"]] || "";
+    document.getElementById("DATADOROMANEIO").value = formatDateForInput(data[index][columnIndexes["data do romaneio"]]);
+    document.getElementById("QTDENVIADA").value = data[index][columnIndexes["qtd enviada"]] || "";
+    document.getElementById("OBSROMANEIO").value = data[index][columnIndexes["obs romaneio"]] || "";
+    document.getElementById("Qtde").value = data[index][columnIndexes["qtde"]] || "";
+    document.getElementById("Saldo").value = data[index][columnIndexes["saldo"]] || "";
 
     document.getElementById("editModal").style.display = "block";
 }
 
 
-        // Salva as edições
-       function saveEdit() {
-    const originalIndex = parseInt(document.getElementById("editIndex").value);
-    if (originalIndex < 0) return;
 
-    // Atualiza os valores no array `data`
+        // Salva as edições
+     function saveEdit() {
+    const originalIndex = parseInt(document.getElementById("editIndex").value);
+    if (originalIndex < 0 || originalIndex >= data.length) return;
+
     data[originalIndex][columnIndexes["data do romaneio"]] = document.getElementById("DATADOROMANEIO").value;
     data[originalIndex][columnIndexes["qtd enviada"]] = document.getElementById("QTDENVIADA").value;
     data[originalIndex][columnIndexes["obs romaneio"]] = document.getElementById("OBSROMANEIO").value;
 
-    // Adiciona o índice correto às linhas editadas
-    editedRows.add(originalIndex);
+    editedRows.add(originalIndex); // Destaca a linha correta
     localStorage.setItem("uploadedData", JSON.stringify(data));
     localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
 
     document.getElementById("editModal").style.display = "none";
-
-    renderTable(); // Atualiza a tabela
+    renderTable();
 }
+
 
 
         // Fecha o modal
@@ -472,21 +480,34 @@ function renderTable() {
         }
 
         // Carrega o arquivo ao iniciar
-        document.addEventListener("DOMContentLoaded", () => {
-            const storedData = localStorage.getItem("uploadedData");
-            if (storedData) {
-                data = JSON.parse(storedData);
-                filteredData = data.slice(1);
-                findColumnIndexes();
-                renderTable();
-            }
+       document.addEventListener("DOMContentLoaded", () => {
+    const storedData = localStorage.getItem("uploadedData");
+    if (storedData) {
+        try {
+            data = JSON.parse(storedData);
+            filteredData = data.slice(1);
+            findColumnIndexes();
+        } catch (error) {
+            console.error("Erro ao carregar os dados armazenados:", error);
+            localStorage.removeItem("uploadedData");
+        }
+    }
 
-            const storedEditedRows = localStorage.getItem("editedRows");
-            if (storedEditedRows) {
-                editedRows = new Set(JSON.parse(storedEditedRows));
-                renderTable();
-            }
-        });
+    const storedEditedRows = localStorage.getItem("editedRows");
+    if (storedEditedRows) {
+        try {
+            editedRows = new Set(JSON.parse(storedEditedRows));
+        } catch (error) {
+            console.error("Erro ao carregar as edições armazenadas:", error);
+            localStorage.removeItem("editedRows");
+        }
+    }
+
+    if (data.length) {
+        renderTable(); // Chama renderTable apenas uma vez!
+    }
+});
+
     </script>
 </body>
 </html>
