@@ -251,7 +251,7 @@
         // Renderiza a tabela de forma otimizada
 function renderTable() {
     const table = document.getElementById("dataTable");
-    table.innerHTML = ""; // Limpa a tabela antes de renderizar
+    table.innerHTML = "";
 
     if (!data.length) return;
 
@@ -267,6 +267,39 @@ function renderTable() {
     });
 
     fragment.appendChild(headerRow);
+
+    filteredData.forEach((row, index) => {
+        // Agora garantimos que o índice seja encontrado corretamente
+        const originalIndex = data.findIndex(r => JSON.stringify(r) === JSON.stringify(row));
+
+        const tr = document.createElement("tr");
+        tr.onclick = () => openEditModal(index);
+
+        row.forEach((cell, colIndex) => {
+            if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
+                const td = document.createElement("td");
+
+                if (data[0][colIndex].toLowerCase() === "data do romaneio") {
+                    td.textContent = formatDate(row[colIndex]);
+                } else {
+                    td.textContent = cell ? cell : "";
+                }
+
+                tr.appendChild(td);
+            }
+        });
+
+        // Agora destaca a linha certa, usando o índice correto de `data`
+        if (editedRows.has(originalIndex)) {
+            tr.classList.add("edited-row");
+        }
+
+        fragment.appendChild(tr);
+    });
+
+    table.appendChild(fragment);
+}
+
 
     filteredData.forEach((row, index) => {
         const tr = document.createElement("tr");
@@ -322,11 +355,12 @@ function renderTable() {
 
         // Abre o modal de edição
        function openEditModal(index) {
+    // Encontrar a linha exata no array `data` comparando os valores
     const originalIndex = data.findIndex(row => JSON.stringify(row) === JSON.stringify(filteredData[index]));
 
-    if (originalIndex === -1) return; // Evita erro caso o índice não seja encontrado
+    if (originalIndex === -1) return; // Se não encontrar, evita erro
 
-    document.getElementById("editIndex").value = originalIndex; // Armazena o índice correto
+    document.getElementById("editIndex").value = originalIndex; // Salva o índice correto
 
     document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "";
     document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "";
@@ -342,34 +376,25 @@ function renderTable() {
 
 
         // Salva as edições
-        function saveEdit() {
-            const originalIndex = parseInt(document.getElementById("editIndex").value);
-            if (originalIndex < 0) return;
+      function saveEdit() {
+    const originalIndex = parseInt(document.getElementById("editIndex").value);
+    if (originalIndex < 0) return;
 
-            const originalRow = data[originalIndex];
-            const editedRow = [
-                document.getElementById("DATADOROMANEIO").value,
-                document.getElementById("QTDENVIADA").value,
-                document.getElementById("OBSROMANEIO").value
-            ];
+    // Atualiza os valores no array original `data`
+    data[originalIndex][columnIndexes["data do romaneio"]] = document.getElementById("DATADOROMANEIO").value;
+    data[originalIndex][columnIndexes["qtd enviada"]] = document.getElementById("QTDENVIADA").value;
+    data[originalIndex][columnIndexes["obs romaneio"]] = document.getElementById("OBSROMANEIO").value;
 
-            if (
-                originalRow[columnIndexes["data do romaneio"]] !== editedRow[0] ||
-                originalRow[columnIndexes["qtd enviada"]] !== editedRow[1] ||
-                originalRow[columnIndexes["obs romaneio"]] !== editedRow[2]
-            ) {
-                data[originalIndex][columnIndexes["data do romaneio"]] = editedRow[0];
-                data[originalIndex][columnIndexes["qtd enviada"]] = editedRow[1];
-                data[originalIndex][columnIndexes["obs romaneio"]] = editedRow[2];
+    // Armazena o índice correto das edições
+    editedRows.add(originalIndex);
+    localStorage.setItem("uploadedData", JSON.stringify(data));
+    localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
 
-                editedRows.add(originalIndex);
-                localStorage.setItem("uploadedData", JSON.stringify(data));
-                localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
-            }
+    document.getElementById("editModal").style.display = "none";
 
-            document.getElementById("editModal").style.display = "none";
-            renderTable();
-        }
+    renderTable(); // Atualiza a tabela corretamente
+}
+
 
         // Fecha o modal
         function closeModal() {
