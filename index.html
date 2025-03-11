@@ -251,7 +251,7 @@
         // Renderiza a tabela de forma otimizada
 function renderTable() {
     const table = document.getElementById("dataTable");
-    table.innerHTML = ""; // Limpa a tabela antes de renderizar
+    table.innerHTML = "";
 
     if (!data.length) return;
 
@@ -269,6 +269,8 @@ function renderTable() {
     fragment.appendChild(headerRow);
 
     filteredData.forEach((row, index) => {
+        const originalIndex = data.findIndex(r => JSON.stringify(r) === JSON.stringify(row));
+
         const tr = document.createElement("tr");
         tr.onclick = () => openEditModal(index);
 
@@ -276,18 +278,18 @@ function renderTable() {
             if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
                 const td = document.createElement("td");
 
-                // Se for a coluna "data do romaneio", formatar a data corretamente
                 if (data[0][colIndex].toLowerCase() === "data do romaneio") {
                     td.textContent = formatDate(row[colIndex]);
                 } else {
-                    td.textContent = cell ? cell : ""; // Deixa células vazias realmente vazias
+                    td.textContent = cell ? cell : "";
                 }
 
                 tr.appendChild(td);
             }
         });
 
-        if (editedRows.has(index)) {
+        // Agora destaca a linha certa
+        if (editedRows.has(originalIndex)) {
             tr.classList.add("edited-row");
         }
 
@@ -297,8 +299,9 @@ function renderTable() {
     table.appendChild(fragment);
 }
 
+
         // Função de filtro otimizada
-        function applyFilter() {
+       function applyFilter() {
     const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
     const table = document.getElementById("dataTable");
     const rows = table.getElementsByTagName("tr");
@@ -321,56 +324,47 @@ function renderTable() {
 
 
         // Abre o modal de edição
-       function openEditModal(index) {
-    // Encontrar a linha exata no array `data` comparando os valores
+   function openEditModal(index) {
+    // Pega a referência exata do índice no `data` baseado em `filteredData`
     const originalIndex = data.findIndex(row => JSON.stringify(row) === JSON.stringify(filteredData[index]));
 
-    if (originalIndex === -1) return; // Se não encontrar, evita erro
+    if (originalIndex === -1) return;
 
     document.getElementById("editIndex").value = originalIndex; // Salva o índice correto
 
-    document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "";
-    document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "";
-    document.getElementById("IDENTIFICACAO2").value = filteredData[index][columnIndexes["identificação 2"]] || "";
-    document.getElementById("DATADOROMANEIO").value = formatDateForInput(filteredData[index][columnIndexes["data do romaneio"]]);
-    document.getElementById("QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
-    document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
-    document.getElementById("Qtde").value = filteredData[index][columnIndexes["qtde"]] || "";
-    document.getElementById("Saldo").value = filteredData[index][columnIndexes["saldo"]] || "";
+    document.getElementById("POSICAOTAG").value = data[originalIndex][columnIndexes["posição / tag"]] || "";
+    document.getElementById("IDENTIFICACAO1").value = data[originalIndex][columnIndexes["identificação 1"]] || "";
+    document.getElementById("IDENTIFICACAO2").value = data[originalIndex][columnIndexes["identificação 2"]] || "";
+    document.getElementById("DATADOROMANEIO").value = formatDateForInput(data[originalIndex][columnIndexes["data do romaneio"]]);
+    document.getElementById("QTDENVIADA").value = data[originalIndex][columnIndexes["qtd enviada"]] || "";
+    document.getElementById("OBSROMANEIO").value = data[originalIndex][columnIndexes["obs romaneio"]] || "";
+    document.getElementById("Qtde").value = data[originalIndex][columnIndexes["qtde"]] || "";
+    document.getElementById("Saldo").value = data[originalIndex][columnIndexes["saldo"]] || "";
 
     document.getElementById("editModal").style.display = "block";
 }
 
 
         // Salva as edições
-        function saveEdit() {
-            const originalIndex = parseInt(document.getElementById("editIndex").value);
-            if (originalIndex < 0) return;
+       function saveEdit() {
+    const originalIndex = parseInt(document.getElementById("editIndex").value);
+    if (originalIndex < 0) return;
 
-            const originalRow = data[originalIndex];
-            const editedRow = [
-                document.getElementById("DATADOROMANEIO").value,
-                document.getElementById("QTDENVIADA").value,
-                document.getElementById("OBSROMANEIO").value
-            ];
+    // Atualiza os valores no array `data`
+    data[originalIndex][columnIndexes["data do romaneio"]] = document.getElementById("DATADOROMANEIO").value;
+    data[originalIndex][columnIndexes["qtd enviada"]] = document.getElementById("QTDENVIADA").value;
+    data[originalIndex][columnIndexes["obs romaneio"]] = document.getElementById("OBSROMANEIO").value;
 
-            if (
-                originalRow[columnIndexes["data do romaneio"]] !== editedRow[0] ||
-                originalRow[columnIndexes["qtd enviada"]] !== editedRow[1] ||
-                originalRow[columnIndexes["obs romaneio"]] !== editedRow[2]
-            ) {
-                data[originalIndex][columnIndexes["data do romaneio"]] = editedRow[0];
-                data[originalIndex][columnIndexes["qtd enviada"]] = editedRow[1];
-                data[originalIndex][columnIndexes["obs romaneio"]] = editedRow[2];
+    // Adiciona o índice correto às linhas editadas
+    editedRows.add(originalIndex);
+    localStorage.setItem("uploadedData", JSON.stringify(data));
+    localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
 
-                editedRows.add(originalIndex);
-                localStorage.setItem("uploadedData", JSON.stringify(data));
-                localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
-            }
+    document.getElementById("editModal").style.display = "none";
 
-            document.getElementById("editModal").style.display = "none";
-            renderTable();
-        }
+    renderTable(); // Atualiza a tabela
+}
+
 
         // Fecha o modal
         function closeModal() {
