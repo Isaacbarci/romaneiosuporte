@@ -248,7 +248,7 @@
         // Renderiza a tabela de forma otimizada
         function renderTable() {
     const table = document.getElementById("dataTable");
-    table.innerHTML = "";
+    table.innerHTML = ""; // Limpa a tabela antes de renderizar
 
     if (!data.length) return;
 
@@ -265,40 +265,27 @@
 
     fragment.appendChild(headerRow);
 
-    let startIndex = 0;
-    const chunkSize = 100; // Renderiza 100 linhas por quadro
+    // Usando o método slice() para evitar re-renderizações excessivas
+    filteredData.forEach((row, index) => {
+        const tr = document.createElement("tr");
+        tr.onclick = () => openEditModal(index);
 
-    function renderChunk() {
-        const endIndex = Math.min(startIndex + chunkSize, filteredData.length);
-        for (let i = startIndex; i < endIndex; i++) {
-            const row = filteredData[i];
-            const tr = document.createElement("tr");
-            tr.onclick = () => openEditModal(i);
-
-            row.forEach((cell, colIndex) => {
-                if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
-                    const td = document.createElement("td");
-                    td.textContent = cell || "N/A";
-                    tr.appendChild(td);
-                }
-            });
-
-            if (editedRows.has(i)) {
-                tr.classList.add("edited-row");
+        row.forEach((cell, colIndex) => {
+            if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
+                const td = document.createElement("td");
+                td.textContent = cell || "N/A";
+                tr.appendChild(td);
             }
+        });
 
-            fragment.appendChild(tr);
+        if (editedRows.has(index)) {
+            tr.classList.add("edited-row");
         }
 
-        table.appendChild(fragment);
-        startIndex = endIndex;
+        fragment.appendChild(tr);
+    });
 
-        if (startIndex < filteredData.length) {
-            requestAnimationFrame(renderChunk);
-        }
-    }
-
-    requestAnimationFrame(renderChunk);
+    table.appendChild(fragment);
 }
 
 
