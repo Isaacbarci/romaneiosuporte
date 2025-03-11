@@ -268,7 +268,7 @@
             });
         }
 
-     function applyFilter() {
+   function applyFilter() {
     const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
 
     // Verifica se as colunas "QR" e "Identificação 1" existem
@@ -280,7 +280,7 @@
         return;
     }
 
-    // Filtra os dados com base nas colunas "QR" e "Identificação 1"
+    // Filtra os dados com base apenas nas colunas "QR" e "Identificação 1"
     filteredData = data.slice(1).filter(row => {
         const qrValue = String(row[qrColumnIndex]).toLowerCase();
         const identificacao1Value = String(row[identificacao1Index]).toLowerCase();
