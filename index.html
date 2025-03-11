@@ -459,7 +459,25 @@
             XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
             XLSX.writeFile(newWorkbook, "romaneio.xlsx");
         }
-     // Funções para compressão e descompressão de dados
+
+        // Carrega o arquivo ao iniciar
+        document.addEventListener("DOMContentLoaded", () => {
+            const storedData = localStorage.getItem("uploadedData");
+            if (storedData) {
+                data = JSON.parse(storedData);
+                filteredData = data.slice(1);
+                findColumnIndexes();
+                renderTable();
+            }
+
+            const storedEditedRows = localStorage.getItem("editedRows");
+            if (storedEditedRows) {
+                editedRows = new Set(JSON.parse(storedEditedRows));
+                renderTable();
+            }
+        });
+
+        // Funções para compressão e descompressão de dados
 function compressData(data) {
     return btoa(JSON.stringify(data)); // Converte os dados para uma string codificada em Base64
 }
