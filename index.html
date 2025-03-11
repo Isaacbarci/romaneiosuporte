@@ -459,7 +459,7 @@
             XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
             XLSX.writeFile(newWorkbook, "romaneio.xlsx");
         }
-   // Funções para compressão e descompressão de dados
+     // Funções para compressão e descompressão de dados
 function compressData(data) {
     return btoa(JSON.stringify(data)); // Converte os dados para uma string codificada em Base64
 }
@@ -493,7 +493,7 @@ function loadFromLocalStorage(key) {
     return null;
 }
 
-// Variáveis globais
+// Variáveis globais (certifique-se de que estão definidas)
 let data = []; // Dados principais
 let filteredData = []; // Dados filtrados
 let editedRows = new Set(); // Linhas editadas
@@ -540,17 +540,6 @@ function addEditedRow(rowIndex) {
     editedRows.add(rowIndex);
     renderTable();
     saveAppState(); // Salva o estado após modificar as linhas editadas
-}
-
-// Função de exemplo para renderizar a tabela
-function renderTable() {
-    console.log("Tabela renderizada com os dados:", data);
-    console.log("Linhas editadas:", editedRows);
-}
-
-// Função de exemplo para encontrar índices das colunas
-function findColumnIndexes() {
-    console.log("Índices das colunas encontrados.");
 }
     </script>
 </body>
