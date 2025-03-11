@@ -215,16 +215,19 @@
                 });
         }
 
-        // Função para formatar a data no formato "dia/mês/ano"
-        function formatDate(dateString) {
-            if (!dateString) return "";
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return "";
-            const day = String(date.getUTCDate()).padStart(2, "0");
-            const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-            const year = date.getUTCFullYear();
-            return `${day}/${month}/${year}`;
-        }
+       function formatDate(dateString) {
+    if (!dateString) return "";
+
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
+
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const year = date.getUTCFullYear();
+
+    return `${day}/${month}/${year}`;
+}
+
 
         // Função para converter a data para o formato YYYY-MM-DD (usado pelo input type="date")
         function formatDateForInput(dateString) {
@@ -246,7 +249,7 @@
         }
 
         // Renderiza a tabela de forma otimizada
-        function renderTable() {
+function renderTable() {
     const table = document.getElementById("dataTable");
     table.innerHTML = ""; // Limpa a tabela antes de renderizar
 
@@ -265,7 +268,6 @@
 
     fragment.appendChild(headerRow);
 
-    // Usando o método slice() para evitar re-renderizações excessivas
     filteredData.forEach((row, index) => {
         const tr = document.createElement("tr");
         tr.onclick = () => openEditModal(index);
@@ -273,7 +275,14 @@
         row.forEach((cell, colIndex) => {
             if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
                 const td = document.createElement("td");
-                td.textContent = cell || "N/A";
+
+                // Se for a coluna "data do romaneio", formatar a data corretamente
+                if (data[0][colIndex].toLowerCase() === "data do romaneio") {
+                    td.textContent = formatDate(row[colIndex]);
+                } else {
+                    td.textContent = cell ? cell : ""; // Deixa células vazias realmente vazias
+                }
+
                 tr.appendChild(td);
             }
         });
@@ -287,7 +296,6 @@
 
     table.appendChild(fragment);
 }
-
 
         // Função de filtro otimizada
         function applyFilter() {
