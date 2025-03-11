@@ -130,6 +130,19 @@
     </style>
 </head>
 <body>
+    <!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Romaneio de Suporte</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        /* Estilos anteriores... */
+    </style>
+</head>
+<body>
     <h2>ROMANEIO DE SUPORTE</h2>
     <select id="fileList">
         <option value="">Selecione um arquivo</option>
@@ -170,6 +183,8 @@
         let columnIndexes = {};
         let editedRows = new Set();
         let qrScanner;
+
+        const rowsPerPage = 500; // Número de linhas por página
 
         const hiddenColumns = [
             "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
@@ -252,6 +267,14 @@
             });
         }
 
+        function applyFilter() {
+            const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
+            filteredData = data.slice(1).filter(row => {
+                return row.some(cell => String(cell).toLowerCase().includes(filterValue));
+            });
+            renderTable();
+        }
+
         function renderTable() {
             const table = document.getElementById("dataTable");
             table.innerHTML = "";
@@ -261,6 +284,7 @@
             const fragment = document.createDocumentFragment();
             const headerRow = document.createElement("tr");
 
+            // Renderizar cabeçalho
             data[0].forEach((header, colIndex) => {
                 if (!hiddenColumns.includes(header.trim().toLowerCase())) {
                     const th = document.createElement("th");
@@ -271,7 +295,8 @@
 
             fragment.appendChild(headerRow);
 
-            filteredData.forEach((row, index) => {
+            // Renderizar linhas (limitado a 500 por página)
+            filteredData.slice(0, rowsPerPage).forEach((row, index) => {
                 const originalIndex = data.indexOf(row);
                 if (originalIndex === -1) return;
 
@@ -302,27 +327,6 @@
             table.appendChild(fragment);
         }
 
-        function applyFilter() {
-            const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
-            const table = document.getElementById("dataTable");
-            const rows = table.getElementsByTagName("tr");
-
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                const cells = row.getElementsByTagName("td");
-                let match = false;
-
-                for (let j = 0; j < cells.length; j++) {
-                    if (cells[j].textContent.toLowerCase().includes(filterValue)) {
-                        match = true;
-                        break;
-                    }
-                }
-
-                row.style.display = match ? "" : "none";
-            }
-        }
-
         function openEditModal(index) {
             if (index < 0 || index >= data.length) return;
 
@@ -340,33 +344,33 @@
             document.getElementById("editModal").style.display = "block";
         }
 
-       function saveEdit() {
-    const originalIndex = parseInt(document.getElementById("editIndex").value);
-    if (originalIndex < 0 || originalIndex >= data.length) return;
+        function saveEdit() {
+            const originalIndex = parseInt(document.getElementById("editIndex").value);
+            if (originalIndex < 0 || originalIndex >= data.length) return;
 
-    // Atualiza os valores na linha
-    data[originalIndex][columnIndexes["data do romaneio"]] = document.getElementById("DATADOROMANEIO").value;
-    data[originalIndex][columnIndexes["qtd enviada"]] = document.getElementById("QTDENVIADA").value;
-    data[originalIndex][columnIndexes["obs romaneio"]] = document.getElementById("OBSROMANEIO").value;
+            // Atualiza os valores na linha
+            data[originalIndex][columnIndexes["data do romaneio"]] = document.getElementById("DATADOROMANEIO").value;
+            data[originalIndex][columnIndexes["qtd enviada"]] = document.getElementById("QTDENVIADA").value;
+            data[originalIndex][columnIndexes["obs romaneio"]] = document.getElementById("OBSROMANEIO").value;
 
-    // Verifica se a data foi limpa
-    const dataRomaneio = document.getElementById("DATADOROMANEIO").value;
-    if (!dataRomaneio) {
-        // Remove a linha do conjunto de linhas editadas se a data foi limpa
-        editedRows.delete(originalIndex);
-    } else {
-        // Adiciona a linha ao conjunto de linhas editadas
-        editedRows.add(originalIndex);
-    }
+            // Verifica se a data foi limpa
+            const dataRomaneio = document.getElementById("DATADOROMANEIO").value;
+            if (!dataRomaneio) {
+                // Remove a linha do conjunto de linhas editadas se a data foi limpa
+                editedRows.delete(originalIndex);
+            } else {
+                // Adiciona a linha ao conjunto de linhas editadas
+                editedRows.add(originalIndex);
+            }
 
-    // Salva os dados e as edições no localStorage
-    localStorage.setItem("uploadedData", JSON.stringify(data));
-    localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
+            // Salva os dados e as edições no localStorage
+            localStorage.setItem("uploadedData", JSON.stringify(data));
+            localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
 
-    // Fecha o modal e renderiza a tabela
-    document.getElementById("editModal").style.display = "none";
-    renderTable();
-}
+            // Fecha o modal e renderiza a tabela
+            document.getElementById("editModal").style.display = "none";
+            renderTable();
+        }
 
         function closeModal() {
             document.getElementById("editModal").style.display = "none";
