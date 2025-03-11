@@ -489,7 +489,27 @@ function decompressData(compressedData) {
         console.error("Erro ao descomprimir dados:", error);
         return null;
     }
+}
 
+// Salva dados no localStorage
+function saveToLocalStorage(key, data) {
+    try {
+        const compressedData = compressData(data);
+        localStorage.setItem(key, compressedData);
+    } catch (error) {
+        console.error("Erro ao salvar no localStorage:", error);
+        alert("Erro ao salvar os dados. O arquivo pode ser muito grande.");
+    }
+}
+
+// Carrega dados do localStorage
+function loadFromLocalStorage(key) {
+    const compressedData = localStorage.getItem(key);
+    if (compressedData) {
+        return decompressData(compressedData);
+    }
+    return null;
+}
 
     </script>
 </body>
