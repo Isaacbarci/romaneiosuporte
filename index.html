@@ -137,7 +137,7 @@
         <option value="Raizen.xlsx">Raizen</option>
     </select>
     <button onclick="confirmUpdate()">Atualizar Arquivo</button>
-    <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR ou Identificação" onkeyup="applyFilterDebounced()">
+    <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR ou Identificação" onkeyup="applyFilter()">
     <button onclick="downloadExcel()">Download Excel</button>
     <button onclick="startQrScanner()">Escanear QR Code</button>
 
@@ -147,10 +147,7 @@
     </div>
 
     <div class="table-container">
-        <table id="dataTable">
-            <thead id="tableHeader"></thead>
-            <tbody id="tableBody"></tbody>
-        </table>
+        <table id="dataTable"></table>
     </div>
 
     <div id="editModal" class="modal">
@@ -173,9 +170,6 @@
         let columnIndexes = {};
         let editedRows = new Set();
         let qrScanner;
-        let currentPage = 0;
-        const rowsPerPage = 50; // Número de linhas renderizadas por vez
-        let modalClone = null;
 
         const hiddenColumns = [
             "desenho suporte", "informações", "isométrico", "peso (kg)", "cond. pintura",
@@ -214,72 +208,95 @@
                     editedRows.clear();
                     localStorage.removeItem("editedRows");
                     findColumnIndexes();
-                    renderTableHeader();
-                    renderTableBody();
+                    renderTable();
                 })
                 .catch(error => {
                     console.error("Erro ao carregar o arquivo:", error);
                 });
         }
 
-        // Renderiza o cabeçalho da tabela
-        function renderTableHeader() {
-            const headerRow = document.getElementById("tableHeader");
-            headerRow.innerHTML = "";
+        // Função para formatar a data no formato "dia/mês/ano"
+        function formatDate(dateString) {
+            if (!dateString) return "";
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return "";
+            const day = String(date.getUTCDate()).padStart(2, "0");
+            const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+            const year = date.getUTCFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        // Função para converter a data para o formato YYYY-MM-DD (usado pelo input type="date")
+        function formatDateForInput(dateString) {
+            if (!dateString) return "";
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return "";
+            const day = String(date.getUTCDate()).padStart(2, "0");
+            const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+            const year = date.getUTCFullYear();
+            return `${year}-${month}-${day}`;
+        }
+
+        // Encontra os índices das colunas
+        function findColumnIndexes() {
+            columnIndexes = {};
+            data[0].forEach((header, index) => {
+                columnIndexes[header.trim().toLowerCase()] = index;
+            });
+        }
+
+        // Renderiza a tabela de forma otimizada
+        function renderTable() {
+            const table = document.getElementById("dataTable");
+            table.innerHTML = "";
 
             if (!data.length) return;
 
-            const tr = document.createElement("tr");
+            const headerRow = table.insertRow();
             data[0].forEach((header, colIndex) => {
                 if (!hiddenColumns.includes(header.trim().toLowerCase())) {
                     const th = document.createElement("th");
                     th.textContent = header;
-                    tr.appendChild(th);
+                    headerRow.appendChild(th);
                 }
             });
-            headerRow.appendChild(tr);
-        }
 
-        // Renderiza o corpo da tabela de forma virtualizada
-        function renderTableBody() {
-            const tableBody = document.getElementById("tableBody");
-            tableBody.innerHTML = "";
+            // Usar requestAnimationFrame para renderização suave
+            const renderChunk = (startIndex) => {
+                const chunkSize = 50; // Renderiza 50 linhas por quadro
+                const endIndex = Math.min(startIndex + chunkSize, filteredData.length);
 
-            const startIndex = currentPage * rowsPerPage;
-            const endIndex = Math.min(startIndex + rowsPerPage, filteredData.length);
+                for (let i = startIndex; i < endIndex; i++) {
+                    const row = filteredData[i];
+                    const tr = table.insertRow();
+                    const originalIndex = data.indexOf(row);
+                    const dataRomaneio = row[columnIndexes["data do romaneio"]];
 
-            for (let i = startIndex; i < endIndex; i++) {
-                const row = filteredData[i];
-                const tr = document.createElement("tr");
-                const originalIndex = data.indexOf(row);
-                const dataRomaneio = row[columnIndexes["data do romaneio"]];
-
-                if (dataRomaneio && editedRows.has(originalIndex)) {
-                    tr.classList.add("edited-row");
-                }
-                tr.onclick = () => openEditModal(i);
-                row.forEach((cell, colIndex) => {
-                    if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
-                        const td = document.createElement("td");
-                        let cellValue = cell || "N/A";
-                        if (data[0][colIndex].trim().toLowerCase() === "data do romaneio") {
-                            cellValue = formatDate(cellValue);
-                        }
-                        td.textContent = cellValue;
-                        tr.appendChild(td);
+                    if (dataRomaneio && editedRows.has(originalIndex)) {
+                        tr.classList.add("edited-row");
                     }
-                });
-                tableBody.appendChild(tr);
-            }
+                    tr.onclick = () => openEditModal(i);
+                    row.forEach((cell, colIndex) => {
+                        if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
+                            const td = tr.insertCell();
+                            let cellValue = cell || "N/A";
+                            if (data[0][colIndex].trim().toLowerCase() === "data do romaneio") {
+                                cellValue = formatDate(cellValue);
+                            }
+                            td.textContent = cellValue;
+                        }
+                    });
+                }
+
+                if (endIndex < filteredData.length) {
+                    requestAnimationFrame(() => renderChunk(endIndex));
+                }
+            };
+
+            renderChunk(0);
         }
 
-        // Função de filtro com debounce
-        let filterTimeout;
-        function applyFilterDebounced() {
-            clearTimeout(filterTimeout);
-            filterTimeout = setTimeout(() => applyFilter(), 300); // Atraso de 300ms
-        }
-
+        // Função de filtro otimizada
         function applyFilter() {
             const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
             if (!filterValue) {
@@ -289,41 +306,35 @@
                     return row.some(cell => cell.toString().toLowerCase().includes(filterValue));
                 });
             }
-            currentPage = 0;
-            renderTableBody();
+            renderTable();
         }
 
         // Abre o modal de edição
         function openEditModal(index) {
-            if (!modalClone) {
-                modalClone = document.getElementById("editModal").cloneNode(true);
-                document.body.appendChild(modalClone);
-            }
-
             const originalIndex = data.indexOf(filteredData[index]);
-            modalClone.querySelector("#editIndex").value = originalIndex;
-            modalClone.querySelector("#POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "N/A";
-            modalClone.querySelector("#IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "N/A";
-            modalClone.querySelector("#IDENTIFICACAO2").value = filteredData[index][columnIndexes["identificação 2"]] || "N/A";
-            modalClone.querySelector("#DATADOROMANEIO").value = formatDateForInput(filteredData[index][columnIndexes["data do romaneio"]]);
-            modalClone.querySelector("#QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
-            modalClone.querySelector("#OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
-            modalClone.querySelector("#Qtde").value = filteredData[index][columnIndexes["qtde"]] || "N/A";
-            modalClone.querySelector("#Saldo").value = filteredData[index][columnIndexes["saldo"]] || "N/A";
+            document.getElementById("editIndex").value = originalIndex;
+            document.getElementById("POSICAOTAG").value = filteredData[index][columnIndexes["posição / tag"]] || "N/A";
+            document.getElementById("IDENTIFICACAO1").value = filteredData[index][columnIndexes["identificação 1"]] || "N/A";
+            document.getElementById("IDENTIFICACAO2").value = filteredData[index][columnIndexes["identificação 2"]] || "N/A";
+            document.getElementById("DATADOROMANEIO").value = formatDateForInput(filteredData[index][columnIndexes["data do romaneio"]]);
+            document.getElementById("QTDENVIADA").value = filteredData[index][columnIndexes["qtd enviada"]] || "";
+            document.getElementById("OBSROMANEIO").value = filteredData[index][columnIndexes["obs romaneio"]] || "";
+            document.getElementById("Qtde").value = filteredData[index][columnIndexes["qtde"]] || "N/A";
+            document.getElementById("Saldo").value = filteredData[index][columnIndexes["saldo"]] || "N/A";
 
-            modalClone.style.display = "block";
+            document.getElementById("editModal").style.display = "block";
         }
 
         // Salva as edições
         function saveEdit() {
-            const originalIndex = parseInt(modalClone.querySelector("#editIndex").value);
+            const originalIndex = parseInt(document.getElementById("editIndex").value);
             if (originalIndex < 0) return;
 
             const originalRow = data[originalIndex];
             const editedRow = [
-                modalClone.querySelector("#DATADOROMANEIO").value,
-                modalClone.querySelector("#QTDENVIADA").value,
-                modalClone.querySelector("#OBSROMANEIO").value
+                document.getElementById("DATADOROMANEIO").value,
+                document.getElementById("QTDENVIADA").value,
+                document.getElementById("OBSROMANEIO").value
             ];
 
             if (
@@ -340,16 +351,16 @@
                 localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
             }
 
-            modalClone.style.display = "none";
-            renderTableBody(); // Atualiza apenas a linha editada
+            document.getElementById("editModal").style.display = "none";
+            renderTable();
         }
 
         // Fecha o modal
         function closeModal() {
-            modalClone.style.display = "none";
+            document.getElementById("editModal").style.display = "none";
         }
 
-              // Inicia o scanner de QR Code
+        // Inicia o scanner de QR Code
         function startQrScanner() {
             document.getElementById("qr-container").style.display = "block";
             document.getElementById("closeScannerBtn").style.display = "block";
@@ -449,19 +460,46 @@
             XLSX.writeFile(newWorkbook, "romaneio.xlsx");
         }
 
-        // Carrega o arquivo ao iniciar
+        // Funções para compressão e descompressão de dados
+        function compressData(data) {
+            return btoa(JSON.stringify(data));
+        }
+
+        function decompressData(compressedData) {
+            return JSON.parse(atob(compressedData));
+        }
+
+        function saveToLocalStorage(key, data) {
+            try {
+                const compressedData = compressData(data);
+                localStorage.setItem(key, compressedData);
+            } catch (error) {
+                console.error("Erro ao salvar no localStorage:", error);
+                alert("Erro ao salvar os dados. O arquivo pode ser muito grande.");
+            }
+        }
+
+        function loadFromLocalStorage(key) {
+            const compressedData = localStorage.getItem(key);
+            if (compressedData) {
+                return decompressData(compressedData);
+            }
+            return null;
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
-            const storedData = localStorage.getItem("uploadedData");
+            // Carrega os dados do localStorage (se existirem)
+            const storedData = loadFromLocalStorage("uploadedData");
             if (storedData) {
-                data = JSON.parse(storedData);
+                data = storedData;
                 filteredData = data.slice(1);
                 findColumnIndexes();
                 renderTable();
             }
 
-            const storedEditedRows = localStorage.getItem("editedRows");
+            const storedEditedRows = loadFromLocalStorage("editedRows");
             if (storedEditedRows) {
-                editedRows = new Set(JSON.parse(storedEditedRows));
+                editedRows = new Set(storedEditedRows);
                 renderTable();
             }
         });
