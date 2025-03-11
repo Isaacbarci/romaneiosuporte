@@ -247,54 +247,60 @@
 
         // Renderiza a tabela de forma otimizada
         function renderTable() {
-            const table = document.getElementById("dataTable");
-            table.innerHTML = "";
+    const table = document.getElementById("dataTable");
+    table.innerHTML = "";
 
-            if (!data.length) return;
+    if (!data.length) return;
 
-            const headerRow = table.insertRow();
-            data[0].forEach((header, colIndex) => {
-                if (!hiddenColumns.includes(header.trim().toLowerCase())) {
-                    const th = document.createElement("th");
-                    th.textContent = header;
-                    headerRow.appendChild(th);
+    const fragment = document.createDocumentFragment();
+    const headerRow = document.createElement("tr");
+
+    data[0].forEach((header, colIndex) => {
+        if (!hiddenColumns.includes(header.trim().toLowerCase())) {
+            const th = document.createElement("th");
+            th.textContent = header;
+            headerRow.appendChild(th);
+        }
+    });
+
+    fragment.appendChild(headerRow);
+
+    let startIndex = 0;
+    const chunkSize = 100; // Renderiza 100 linhas por quadro
+
+    function renderChunk() {
+        const endIndex = Math.min(startIndex + chunkSize, filteredData.length);
+        for (let i = startIndex; i < endIndex; i++) {
+            const row = filteredData[i];
+            const tr = document.createElement("tr");
+            tr.onclick = () => openEditModal(i);
+
+            row.forEach((cell, colIndex) => {
+                if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
+                    const td = document.createElement("td");
+                    td.textContent = cell || "N/A";
+                    tr.appendChild(td);
                 }
             });
 
-            // Usar requestAnimationFrame para renderização suave
-            const renderChunk = (startIndex) => {
-                const chunkSize = 50; // Renderiza 50 linhas por quadro
-                const endIndex = Math.min(startIndex + chunkSize, filteredData.length);
+            if (editedRows.has(i)) {
+                tr.classList.add("edited-row");
+            }
 
-                for (let i = startIndex; i < endIndex; i++) {
-                    const row = filteredData[i];
-                    const tr = table.insertRow();
-                    const originalIndex = data.indexOf(row);
-                    const dataRomaneio = row[columnIndexes["data do romaneio"]];
-
-                    if (dataRomaneio && editedRows.has(originalIndex)) {
-                        tr.classList.add("edited-row");
-                    }
-                    tr.onclick = () => openEditModal(i);
-                    row.forEach((cell, colIndex) => {
-                        if (!hiddenColumns.includes(data[0][colIndex].trim().toLowerCase())) {
-                            const td = tr.insertCell();
-                            let cellValue = cell || "N/A";
-                            if (data[0][colIndex].trim().toLowerCase() === "data do romaneio") {
-                                cellValue = formatDate(cellValue);
-                            }
-                            td.textContent = cellValue;
-                        }
-                    });
-                }
-
-                if (endIndex < filteredData.length) {
-                    requestAnimationFrame(() => renderChunk(endIndex));
-                }
-            };
-
-            renderChunk(0);
+            fragment.appendChild(tr);
         }
+
+        table.appendChild(fragment);
+        startIndex = endIndex;
+
+        if (startIndex < filteredData.length) {
+            requestAnimationFrame(renderChunk);
+        }
+    }
+
+    requestAnimationFrame(renderChunk);
+}
+
 
         // Função de filtro otimizada
         function applyFilter() {
