@@ -511,54 +511,6 @@ function loadFromLocalStorage(key) {
     return null;
 }
 
-// Variáveis globais (certifique-se de que estão definidas)
-let data = []; // Dados principais
-let filteredData = []; // Dados filtrados
-let editedRows = new Set(); // Linhas editadas
-
-// Função para salvar o estado atual no localStorage
-function saveAppState() {
-    saveToLocalStorage("uploadedData", data); // Salva os dados principais
-    saveToLocalStorage("editedRows", Array.from(editedRows)); // Salva as linhas editadas (converte Set para array)
-}
-
-// Função para carregar o estado do localStorage
-function loadAppState() {
-    const storedData = loadFromLocalStorage("uploadedData");
-    if (storedData) {
-        data = storedData;
-        filteredData = data.slice(1); // Atualiza os dados filtrados
-        findColumnIndexes(); // Supondo que essa função exista
-        renderTable(); // Supondo que essa função exista
-    }
-
-    const storedEditedRows = loadFromLocalStorage("editedRows");
-    if (storedEditedRows) {
-        editedRows = new Set(storedEditedRows); // Converte o array de volta para Set
-        renderTable(); // Renderiza a tabela novamente
-    }
-}
-
-// Evento que é executado quando a página é carregada
-document.addEventListener("DOMContentLoaded", () => {
-    loadAppState(); // Carrega o estado salvo ao carregar a página
-});
-
-// Exemplo de como salvar o estado quando os dados são modificados
-function updateData(newData) {
-    data = newData;
-    filteredData = data.slice(1);
-    findColumnIndexes();
-    renderTable();
-    saveAppState(); // Salva o estado após modificar os dados
-}
-
-// Exemplo de como adicionar uma linha editada
-function addEditedRow(rowIndex) {
-    editedRows.add(rowIndex);
-    renderTable();
-    saveAppState(); // Salva o estado após modificar as linhas editadas
-}
     </script>
 </body>
 </html>
