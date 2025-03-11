@@ -340,21 +340,33 @@
             document.getElementById("editModal").style.display = "block";
         }
 
-        function saveEdit() {
-            const originalIndex = parseInt(document.getElementById("editIndex").value);
-            if (originalIndex < 0 || originalIndex >= data.length) return;
+       function saveEdit() {
+    const originalIndex = parseInt(document.getElementById("editIndex").value);
+    if (originalIndex < 0 || originalIndex >= data.length) return;
 
-            data[originalIndex][columnIndexes["data do romaneio"]] = document.getElementById("DATADOROMANEIO").value;
-            data[originalIndex][columnIndexes["qtd enviada"]] = document.getElementById("QTDENVIADA").value;
-            data[originalIndex][columnIndexes["obs romaneio"]] = document.getElementById("OBSROMANEIO").value;
+    // Atualiza os valores na linha
+    data[originalIndex][columnIndexes["data do romaneio"]] = document.getElementById("DATADOROMANEIO").value;
+    data[originalIndex][columnIndexes["qtd enviada"]] = document.getElementById("QTDENVIADA").value;
+    data[originalIndex][columnIndexes["obs romaneio"]] = document.getElementById("OBSROMANEIO").value;
 
-            editedRows.add(originalIndex);
-            localStorage.setItem("uploadedData", JSON.stringify(data));
-            localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
+    // Verifica se a data foi limpa
+    const dataRomaneio = document.getElementById("DATADOROMANEIO").value;
+    if (!dataRomaneio) {
+        // Remove a linha do conjunto de linhas editadas se a data foi limpa
+        editedRows.delete(originalIndex);
+    } else {
+        // Adiciona a linha ao conjunto de linhas editadas
+        editedRows.add(originalIndex);
+    }
 
-            document.getElementById("editModal").style.display = "none";
-            renderTable();
-        }
+    // Salva os dados e as edições no localStorage
+    localStorage.setItem("uploadedData", JSON.stringify(data));
+    localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
+
+    // Fecha o modal e renderiza a tabela
+    document.getElementById("editModal").style.display = "none";
+    renderTable();
+}
 
         function closeModal() {
             document.getElementById("editModal").style.display = "none";
