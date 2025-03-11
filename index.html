@@ -459,50 +459,67 @@
             XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
             XLSX.writeFile(newWorkbook, "romaneio.xlsx");
         }
-
-        // Funções para compressão e descompressão de dados
+       // Funções para compressão e descompressão de dados
         function compressData(data) {
             return btoa(JSON.stringify(data));
         }
+// Funções para compressão e descompressão de dados
+function compressData(data) {
+    return btoa(JSON.stringify(data));
+}
 
-        function decompressData(compressedData) {
-            return JSON.parse(atob(compressedData));
-        }
+function decompressData(compressedData) {
+    try {
+        return JSON.parse(atob(compressedData));
+    } catch (error) {
+        console.error("Erro ao descomprimir dados:", error);
+        return null;
+    }
+}
 
-        function saveToLocalStorage(key, data) {
-            try {
-                const compressedData = compressData(data);
-                localStorage.setItem(key, compressedData);
-            } catch (error) {
-                console.error("Erro ao salvar no localStorage:", error);
-                alert("Erro ao salvar os dados. O arquivo pode ser muito grande.");
-            }
-        }
+function saveToLocalStorage(key, data) {
+    try {
+        const compressedData = compressData(data);
+        localStorage.setItem(key, compressedData);
+    } catch (error) {
+        console.error("Erro ao salvar no localStorage:", error);
+        alert("Erro ao salvar os dados. O arquivo pode ser muito grande.");
+    }
+}
 
-        function loadFromLocalStorage(key) {
-            const compressedData = localStorage.getItem(key);
-            if (compressedData) {
-                return decompressData(compressedData);
-            }
-            return null;
-        }
+function loadFromLocalStorage(key) {
+    const compressedData = localStorage.getItem(key);
+    if (compressedData) {
+        return decompressData(compressedData);
+    }
+    return null;
+}
 
-        document.addEventListener("DOMContentLoaded", () => {
-            // Carrega os dados do localStorage (se existirem)
-            const storedData = loadFromLocalStorage("uploadedData");
-            if (storedData) {
-                data = storedData;
-                filteredData = data.slice(1);
-                findColumnIndexes();
-                renderTable();
-            }
+document.addEventListener("DOMContentLoaded", () => {
+    // Carrega os dados do localStorage (se existirem)
+    const storedData = loadFromLocalStorage("uploadedData");
+    if (storedData) {
+        // Certifique-se de que `data` e `filteredData` estão definidos no escopo correto
+        data = storedData;
+        filteredData = data.slice(1);
+        findColumnIndexes();
+        renderTable();
+    }
 
-            const storedEditedRows = loadFromLocalStorage("editedRows");
-            if (storedEditedRows) {
-                editedRows = new Set(storedEditedRows);
-                renderTable();
-            }
-        });
+    const storedEditedRows = loadFromLocalStorage("editedRows");
+    if (storedEditedRows) {
+        // Converte o array de volta para um Set
+        editedRows = new Set(storedEditedRows);
+        renderTable();
+    }
+});
+
+// Exemplo de como salvar `editedRows` no localStorage
+function saveEditedRows() {
+    // Converte o Set para um array antes de salvar
+    const editedRowsArray = Array.from(editedRows);
+    saveToLocalStorage("editedRows", editedRowsArray);
+}
     </script>
 </body>
 </html>
