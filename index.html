@@ -291,16 +291,26 @@
 
         // Função de filtro otimizada
         function applyFilter() {
-            const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
-            if (!filterValue) {
-                filteredData = data.slice(1);
-            } else {
-                filteredData = data.slice(1).filter(row => {
-                    return row.some(cell => cell.toString().toLowerCase().includes(filterValue));
-                });
+    const filterValue = document.getElementById("identificacaoFilter").value.toLowerCase();
+    const table = document.getElementById("dataTable");
+    const rows = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < rows.length; i++) { // Ignora o cabeçalho
+        const row = rows[i];
+        const cells = row.getElementsByTagName("td");
+        let match = false;
+
+        for (let j = 0; j < cells.length; j++) {
+            if (cells[j].textContent.toLowerCase().includes(filterValue)) {
+                match = true;
+                break;
             }
-            renderTable();
         }
+
+        row.style.display = match ? "" : "none";
+    }
+}
+
 
         // Abre o modal de edição
         function openEditModal(index) {
