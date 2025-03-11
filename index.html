@@ -140,7 +140,7 @@
     </style>
 </head>
 <body>
-    <h2>ROMANEIO DE SUPORTE</h2>
+   <h2>ROMANEIO DE SUPORTE</h2>
     <select id="fileList">
         <option value="">Selecione um arquivo</option>
         <option value="Patio de Madeira.xlsx">Patio de Madeira</option>
@@ -220,7 +220,12 @@
         // Carrega o arquivo selecionado da lista
         function loadSelectedFile(fileName) {
             fetch(fileName)
-                .then(response => response.arrayBuffer())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Erro ao carregar o arquivo: ${response.statusText}`);
+                    }
+                    return response.arrayBuffer();
+                })
                 .then(arrayBuffer => {
                     const workbook = XLSX.read(arrayBuffer, { type: 'array', cellFormula: true });
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -235,6 +240,7 @@
                 })
                 .catch(error => {
                     console.error("Erro ao carregar o arquivo:", error);
+                    alert(`Erro ao carregar o arquivo: ${error.message}`);
                 });
         }
 
