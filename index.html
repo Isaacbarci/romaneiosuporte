@@ -427,8 +427,8 @@
             }
         }
 
-       function downloadExcel() {
-    if (!data.length) {
+ function downloadExcel() {
+    if (!data || !data.length) {
         alert("Nenhum dado carregado para exportar.");
         return;
     }
@@ -444,28 +444,28 @@
         "PESO TOTAL", "AREA M² Unitário", "ÁREA M² TOTAL", "Data Cadastro", "ID", "QR"
     ];
 
-    let newData = data.map((row, index) => {
-        if (index === 0) {
-            let headers = columnOrder.map(col => col in columnIndexes ? row[columnIndexes[col]] : "");
-            return headers;
-        }
+    let newData = [];
 
-        let reorderedRow = columnOrder.map(col => col in columnIndexes ? row[columnIndexes[col]] : "");
+    // Adiciona os cabeçalhos
+    newData.push(columnOrder);
 
-        let qtdEnviada = parseFloat(reorderedRow[columnOrder.indexOf("Qtde Enviada")]?.toString().replace(",", "."));
+    // Processa os dados
+    data.forEach((row) => {
+        let reorderedRow = columnOrder.map(col => col in columnIndexes ? row[columnIndexes[col]] || "" : "");
+
+        let qtdEnviada = parseFloat(reorderedRow[columnOrder.indexOf("Qtde Enviada")]?.toString().replace(",", ".")) || 0;
         let pesoKg = parseFloat(reorderedRow[columnOrder.indexOf("Peso (Kg)")]?.toString().replace(",", ".")) || 0;
         let areaSuperficie = parseFloat(reorderedRow[columnOrder.indexOf("Área Superfície")]?.toString().replace(",", ".")) || 0;
 
-        if (!isNaN(qtdEnviada) && qtdEnviada > 0) {
+        if (qtdEnviada > 0) {
             reorderedRow[columnOrder.indexOf("PESO Unitário")] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
             reorderedRow[columnOrder.indexOf("AREA M² Unitário")] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
             reorderedRow[columnOrder.indexOf("Qtde Enviada")] = qtdEnviada.toLocaleString("pt-BR");
         }
 
-        reorderedRow[columnOrder.indexOf("Peso (Kg)")] = reorderedRow[columnOrder.indexOf("Peso (Kg)")]?.toString().replace(".", ",");
-        reorderedRow[columnOrder.indexOf("Área Superfície")] = reorderedRow[columnOrder.indexOf("Área Superfície")]?.toString().replace(".", ",");
-
-        reorderedRow[columnOrder.indexOf("PESO TOTAL")] = reorderedRow[columnOrder.indexOf("Peso (Kg)")];
+        reorderedRow[columnOrder.indexOf("Peso (Kg)")] = pesoKg.toFixed(2).replace(".", ",");
+        reorderedRow[columnOrder.indexOf("Área Superfície")] = areaSuperficie.toFixed(2).replace(".", ",");
+        reorderedRow[columnOrder.indexOf("PESO TOTAL")] = pesoKg.toFixed(2).replace(".", ",");
         reorderedRow[columnOrder.indexOf("Área Superfície")] = reorderedRow[columnOrder.indexOf("ÁREA M² TOTAL")];
 
         columnOrder.forEach((col, colIndex) => {
@@ -479,18 +479,18 @@
             }
         });
 
-        return reorderedRow;
+        newData.push(reorderedRow);
     });
 
     const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
 
-    updatedSheet["!cols"] = newData[0].map((_, index) => {
+    updatedSheet["!cols"] = columnOrder.map((_, index) => {
         let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
         return { wch: maxLength + 2 };
     });
 
     const newWorkbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "romaneio");
+    XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
     XLSX.writeFile(newWorkbook, "romaneio.xlsx");
 }
 
