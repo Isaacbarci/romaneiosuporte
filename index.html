@@ -433,25 +433,22 @@
         return;
     }
 
-    // Ordem correta das colunas para exportação
+    // Ordem correta das colunas mantendo o padrão exato de maiúsculas e minúsculas
     const columnOrder = [
-        "serviço", "posição / tag", "identificação 1", "identificação 2", "rev", "prog. fab.",
-        "executante", "desenho suporte", "informações", "tipo de suporte", "tipo estrutura", "linha",
-        "isométrico", "spool", "qtde", "qtde enviada", "saldo", "cond. pintura", "data corte",
-        "data acoplamento", "data solda", "data jato/pintura", "número romaneio", "data romaneio",
-        "data recebimento", "observação", "localização", "status", "data do romaneio",
-        "qtd enviada", "obs romaneio", "peso unitário", "peso total", "area m² unitário",
-        "área m² total", "data cadastro", "id", "qr"
+        "Serviço", "Posição / TAG", "Identificação 1", "Identificação 2", "REV", "Prog. Fab.",
+        "Executante", "Desenho Suporte", "Informações", "Tipo de Suporte", "Tipo Estrutura", "Linha",
+        "Isométrico", "Spool", "Qtde", "Qtde Enviada", "Saldo", "Cond. Pintura", "Data Corte",
+        "Data Acoplamento", "Data Solda", "Data Jato/Pintura", "Número Romaneio", "Data Romaneio",
+        "Data Recebimento", "Observação", "Localização", "Status", "DATA DO ROMANEIO",
+        "QTD ENVIADA", "OBS ROMANEIO", "PESO Unitário", "PESO TOTAL", "AREA m² Unitário",
+        "ÁREA m² TOTAL", "Data Cadastro", "ID", "QR"
     ];
 
     // Criar um novo conjunto de dados reorganizado
     let reorderedData = [];
 
-    // Reorganiza o cabeçalho
-    let newHeaders = columnOrder.map(col => {
-        return Object.keys(columnIndexes).find(key => key.toLowerCase() === col.toLowerCase()) || col;
-    });
-    reorderedData.push(newHeaders);
+    // Adiciona o cabeçalho reorganizado
+    reorderedData.push([...columnOrder]);
 
     // Reorganiza as linhas de dados e aplica cálculos necessários
     data.slice(1).forEach(row => {
@@ -460,33 +457,33 @@
             return colIndex !== undefined ? row[colIndex] : "";
         });
 
-        // Pegando índices das colunas necessárias
-        let qtdEnviadaIndex = columnOrder.indexOf("qtde enviada");
-        let pesoTotalIndex = columnOrder.indexOf("peso total");
-        let areaTotalIndex = columnOrder.indexOf("área m² total");
-        let pesoUnitIndex = columnOrder.indexOf("peso unitário");
-        let areaUnitIndex = columnOrder.indexOf("area m² unitário");
+        // Índices das colunas para cálculos
+        let qtdEnviadaIndex = columnOrder.indexOf("Qtde Enviada");
+        let pesoTotalIndex = columnOrder.indexOf("PESO TOTAL");
+        let areaTotalIndex = columnOrder.indexOf("ÁREA m² TOTAL");
+        let pesoUnitIndex = columnOrder.indexOf("PESO Unitário");
+        let areaUnitIndex = columnOrder.indexOf("AREA m² Unitário");
 
         // Obter valores necessários para cálculo
-        let qtdEnviada = parseFloat((newRow[qtdEnviadaIndex] || "0").toString().replace(",", "."));
-        let pesoKg = parseFloat((newRow[pesoTotalIndex] || "0").toString().replace(",", "."));
-        let areaSuperficie = parseFloat((newRow[areaTotalIndex] || "0").toString().replace(",", "."));
+        let qtdEnviada = newRow[qtdEnviadaIndex] ? parseFloat(newRow[qtdEnviadaIndex].toString().replace(",", ".")) : null;
+        let pesoKg = newRow[pesoTotalIndex] ? parseFloat(newRow[pesoTotalIndex].toString().replace(",", ".")) : 0;
+        let areaSuperficie = newRow[areaTotalIndex] ? parseFloat(newRow[areaTotalIndex].toString().replace(",", ".")) : 0;
 
-        // Verifica se a Qtde Enviada é maior que zero antes de calcular
-        if (!isNaN(qtdEnviada) && qtdEnviada > 0) {
+        // Cálculo das colunas unitárias APENAS se "Qtde Enviada" for um número válido
+        if (qtdEnviada && !isNaN(qtdEnviada) && qtdEnviada > 0) {
             newRow[pesoUnitIndex] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
             newRow[areaUnitIndex] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
         } else {
-            newRow[pesoUnitIndex] = "0,00";
-            newRow[areaUnitIndex] = "0,00";
+            newRow[pesoUnitIndex] = ""; // Deixa vazio se não houver Qtde Enviada
+            newRow[areaUnitIndex] = "";
         }
 
-        // Formatando as colunas numéricas para exibição no Excel
-        newRow[pesoTotalIndex] = pesoKg.toFixed(2).replace(".", ",");
-        newRow[areaTotalIndex] = areaSuperficie.toFixed(2).replace(".", ",");
+        // Formatando colunas numéricas para o padrão brasileiro
+        if (pesoKg) newRow[pesoTotalIndex] = pesoKg.toFixed(2).replace(".", ",");
+        if (areaSuperficie) newRow[areaTotalIndex] = areaSuperficie.toFixed(2).replace(".", ",");
 
         // Ajustando o formato das datas
-        ["data do romaneio", "data corte", "data acoplamento", "data solda", "data jato/pintura", "data recebimento", "data cadastro"].forEach(colName => {
+        ["Data Romaneio", "Data Corte", "Data Acoplamento", "Data Solda", "Data Jato/Pintura", "Data Recebimento", "Data Cadastro"].forEach(colName => {
             let colIdx = columnOrder.indexOf(colName);
             if (colIdx !== -1) {
                 let dateValue = newRow[colIdx];
