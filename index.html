@@ -427,61 +427,85 @@
             }
         }
 
-        function downloadExcel() {
-            if (!data.length) {
-                alert("Nenhum dado carregado para exportar.");
-                return;
-            }
+     function downloadExcel() {
+    if (!data.length) {
+        alert("Nenhum dado carregado para exportar.");
+        return;
+    }
 
-            let newData = data.map((row, index) => {
-                if (index === 0) {
-                    let headers = [...row];
-                    [headers[columnIndexes["data do romaneio"]], headers[columnIndexes["observação"]]] =
-                        [headers[columnIndexes["observação"]], headers[columnIndexes["data do romaneio"]]];
-                    return headers;
-                }
+    // Ordem correta das colunas para exportação
+    const columnOrder = [
+        "serviço", "posição / tag", "identificação 1", "identificação 2", "rev", "prog. fab.",
+        "executante", "desenho suporte", "informações", "tipo de suporte", "tipo estrutura", "linha",
+        "isométrico", "spool", "qtde", "qtde enviada", "saldo", "cond. pintura", "data corte",
+        "data acoplamento", "data solda", "data jato/pintura", "número romaneio", "data romaneio",
+        "data recebimento", "observação", "localização", "status", "data do romaneio",
+        "qtd enviada", "obs romaneio", "peso unitário", "peso total", "area m² unitário",
+        "área m² total", "id", "qr"
+    ];
 
-                let qtdEnviada = parseFloat(row[columnIndexes["qtd enviada"]]?.toString().replace(",", "."));
-                let pesoKg = parseFloat(row[columnIndexes["peso (kg)"]]?.toString().replace(",", ".")) || 0;
-                let areaSuperficie = parseFloat(row[columnIndexes["área superfície"]]?.toString().replace(",", ".")) || 0;
+    // Criar um novo conjunto de dados reorganizado
+    let reorderedData = [];
 
-                if (!isNaN(qtdEnviada) && qtdEnviada > 0) {
-                    row[columnIndexes["peso unitário"]] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
-                    row[columnIndexes["area m² unitário"]] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
-                    row[columnIndexes["qtd enviada"]] = qtdEnviada.toLocaleString("pt-BR");
-                }
+    // Reorganiza o cabeçalho
+    let newHeaders = columnOrder.map(col => {
+        return Object.keys(columnIndexes).find(key => key.toLowerCase() === col.toLowerCase()) || col;
+    });
+    reorderedData.push(newHeaders);
 
-                row[columnIndexes["peso (kg)"]] = row[columnIndexes["peso (kg)"]]?.toString().replace(".", ",");
-                row[columnIndexes["área superfície"]] = row[columnIndexes["área superfície"]]?.toString().replace(".", ",");
+    // Reorganiza as linhas de dados e aplica cálculos necessários
+    data.slice(1).forEach(row => {
+        let newRow = columnOrder.map(col => {
+            let colIndex = columnIndexes[col.toLowerCase()];
+            return colIndex !== undefined ? row[colIndex] : "";
+        });
 
-                Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
-                    if (colName.includes("data")) {
-                        let dateValue = row[colIndex];
-                        if (dateValue && !isNaN(new Date(dateValue))) {
-                            let dateObj = new Date(dateValue);
-                            dateObj.setDate(dateObj.getDate() + 1);
-                            row[colIndex] = dateObj.toLocaleDateString("pt-BR");
-                        }
-                    }
-                });
+        // Obter valores necessários para cálculo
+        let qtdEnviada = parseFloat(newRow[columnOrder.indexOf("qtde enviada")]?.toString().replace(",", ".")) || 0;
+        let pesoKg = parseFloat(newRow[columnOrder.indexOf("peso total")]?.toString().replace(",", ".")) || 0;
+        let areaSuperficie = parseFloat(newRow[columnOrder.indexOf("área m² total")]?.toString().replace(",", ".")) || 0;
 
-                [row[columnIndexes["data do romaneio"]], row[columnIndexes["observação"]]] =
-                    [row[columnIndexes["observação"]], row[columnIndexes["data do romaneio"]]];
-
-                return row;
-            });
-
-            const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
-
-            updatedSheet["!cols"] = newData[0].map((_, index) => {
-                let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
-                return { wch: maxLength + 2 };
-            });
-
-            const newWorkbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
-            XLSX.writeFile(newWorkbook, "romaneio.xlsx");
+        // Cálculo das colunas Peso Unitário e Área m² Unitário
+        if (qtdEnviada > 0) {
+            newRow[columnOrder.indexOf("peso unitário")] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
+            newRow[columnOrder.indexOf("area m² unitário")] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
         }
+
+        // Formatando as colunas numéricas para exibição no Excel
+        newRow[columnOrder.indexOf("peso total")] = pesoKg.toFixed(2).replace(".", ",");
+        newRow[columnOrder.indexOf("área m² total")] = areaSuperficie.toFixed(2).replace(".", ",");
+
+        // Ajustando o formato das datas
+        ["data do romaneio", "data corte", "data acoplamento", "data solda", "data jato/pintura", "data recebimento", "data cadastro"].forEach(colName => {
+            let colIdx = columnOrder.indexOf(colName);
+            if (colIdx !== -1) {
+                let dateValue = newRow[colIdx];
+                if (dateValue && !isNaN(new Date(dateValue))) {
+                    let dateObj = new Date(dateValue);
+                    dateObj.setDate(dateObj.getDate() + 1);
+                    newRow[colIdx] = dateObj.toLocaleDateString("pt-BR");
+                }
+            }
+        });
+
+        reorderedData.push(newRow);
+    });
+
+    // Criar a nova planilha
+    const updatedSheet = XLSX.utils.aoa_to_sheet(reorderedData);
+
+    // Ajustar a largura das colunas automaticamente
+    updatedSheet["!cols"] = reorderedData[0].map((_, index) => {
+        let maxLength = Math.max(...reorderedData.map(row => (row[index] ? row[index].toString().length : 0)));
+        return { wch: maxLength + 2 };
+    });
+
+    // Criar e salvar o arquivo Excel
+    const newWorkbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Romaneio");
+    XLSX.writeFile(newWorkbook, "romaneio.xlsx");
+}
+
 
         document.addEventListener("DOMContentLoaded", () => {
             const storedData = localStorage.getItem("uploadedData");
