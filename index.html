@@ -124,7 +124,7 @@
         }
         .edited-row {
             background-color: darkgray !important;
-        
+
         }
     </style>
 </head>
@@ -427,64 +427,89 @@
             }
         }
 
- function downloadExcel() {
-    if (!data || !data.length) {
+        function downloadExcel() {
+    if (!data.length) {
         alert("Nenhum dado carregado para exportar.");
         return;
     }
 
-    // Definição da ordem das colunas
-    const columnOrder = [
-        "Serviço", "Posição / TAG", "Identificação 1", "Identificação 2", "REV", "Prog. Fab.",
-        "Executante", "Desenho Suporte", "Informações", "Tipo de Suporte", "Tipo Estrutura",
-        "Linha", "Isométrico", "Spool", "Qtde", "Qtde Enviada", "Saldo", "Peso (Kg)",
-        "Cond. Pintura", "Área Superfície", "Data Corte", "Data Acoplamento", "Data Solda",
-        "Data Jato/Pintura", "Número Romaneio", "Data Romaneio", "Data Recebimento", "Observação",
-        "Localização", "Status", "DATA DO ROMANEIO", "QTD ENVIADA", "OBS ROMANEIO", "PESO Unitário",
-        "PESO TOTAL", "AREA M² Unitário", "ÁREA M² TOTAL", "Data Cadastro", "ID", "QR"
-    ];
+    let headerRow = [...data[0]];
+    let pesoKgIndex = columnIndexes["peso (kg)"];
+    let areaSuperficieIndex = columnIndexes["área superfície"];
+    let pesoUnitarioIndex = columnIndexes["peso unitário"];
+    let areaM2UnitarioIndex = columnIndexes["area m² unitário"];
+    let qtdEnviadaIndex = columnIndexes["qtd enviada"];
 
-    let newData = [];
+    let newData = data.map((row, index) => {
+        if (index === 0) {
+            // Reordenar cabeçalho
+            let reorderedHeader = [];
+            headerRow.forEach((header, colIndex) => {
+                if (colIndex === pesoUnitarioIndex) {
+                    reorderedHeader.push(header);
+                    if (pesoKgIndex !== undefined) {
+                        reorderedHeader.push(headerRow[pesoKgIndex]);
+                    }
+                } else if (colIndex === areaM2UnitarioIndex) {
+                    reorderedHeader.push(header);
+                    if (areaSuperficieIndex !== undefined) {
+                        reorderedHeader.push(headerRow[areaSuperficieIndex]);
+                    }
+                } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex) {
+                    reorderedHeader.push(header);
+                }
+            });
 
-    // Adiciona os cabeçalhos
-    newData.push(columnOrder);
-
-    // Processa os dados
-    data.forEach((row) => {
-        let reorderedRow = columnOrder.map(col => col in columnIndexes ? row[columnIndexes[col]] || "" : "");
-
-        let qtdEnviada = parseFloat(reorderedRow[columnOrder.indexOf("Qtde Enviada")]?.toString().replace(",", ".")) || 0;
-        let pesoKg = parseFloat(reorderedRow[columnOrder.indexOf("Peso (Kg)")]?.toString().replace(",", ".")) || 0;
-        let areaSuperficie = parseFloat(reorderedRow[columnOrder.indexOf("Área Superfície")]?.toString().replace(",", ".")) || 0;
-
-        if (qtdEnviada > 0) {
-            reorderedRow[columnOrder.indexOf("PESO Unitário")] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
-            reorderedRow[columnOrder.indexOf("AREA M² Unitário")] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
-            reorderedRow[columnOrder.indexOf("Qtde Enviada")] = qtdEnviada.toLocaleString("pt-BR");
+            return reorderedHeader;
         }
 
-        reorderedRow[columnOrder.indexOf("Peso (Kg)")] = pesoKg.toFixed(2).replace(".", ",");
-        reorderedRow[columnOrder.indexOf("Área Superfície")] = areaSuperficie.toFixed(2).replace(".", ",");
-        reorderedRow[columnOrder.indexOf("PESO TOTAL")] = pesoKg.toFixed(2).replace(".", ",");
-        reorderedRow[columnOrder.indexOf("Área Superfície")] = reorderedRow[columnOrder.indexOf("ÁREA M² TOTAL")];
+        let qtdEnviada = parseFloat(row[qtdEnviadaIndex]?.toString().replace(",", ".")) || 0;
+        let pesoKg = parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")) || 0;
+        let areaSuperficie = parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")) || 0;
 
-        columnOrder.forEach((col, colIndex) => {
-            if (col.includes("Data")) {
-                let dateValue = reorderedRow[colIndex];
+        if (!isNaN(qtdEnviada) && qtdEnviada > 0) {
+            row[pesoUnitarioIndex] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
+            row[areaM2UnitarioIndex] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
+            row[qtdEnviadaIndex] = qtdEnviada.toLocaleString("pt-BR");
+        }
+
+        row[pesoKgIndex] = row[pesoKgIndex]?.toString().replace(".", ",");
+        row[areaSuperficieIndex] = row[areaSuperficieIndex]?.toString().replace(".", ",");
+
+        Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
+            if (colName.includes("data")) {
+                let dateValue = row[colIndex];
                 if (dateValue && !isNaN(new Date(dateValue))) {
                     let dateObj = new Date(dateValue);
                     dateObj.setDate(dateObj.getDate() + 1);
-                    reorderedRow[colIndex] = dateObj.toLocaleDateString("pt-BR");
+                    row[colIndex] = dateObj.toLocaleDateString("pt-BR");
                 }
             }
         });
 
-        newData.push(reorderedRow);
+        let reorderedRow = [];
+        row.forEach((cell, colIndex) => {
+            if (colIndex === pesoUnitarioIndex) {
+                reorderedRow.push(cell);
+                if (pesoKgIndex !== undefined) {
+                    reorderedRow.push(row[pesoKgIndex]);
+                }
+            } else if (colIndex === areaM2UnitarioIndex) {
+                reorderedRow.push(cell);
+                if (areaSuperficieIndex !== undefined) {
+                    reorderedRow.push(row[areaSuperficieIndex]);
+                }
+            } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex) {
+                reorderedRow.push(cell);
+            }
+        });
+
+        return reorderedRow;
     });
 
     const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
 
-    updatedSheet["!cols"] = columnOrder.map((_, index) => {
+    updatedSheet["!cols"] = newData[0].map((_, index) => {
         let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
         return { wch: maxLength + 2 };
     });
