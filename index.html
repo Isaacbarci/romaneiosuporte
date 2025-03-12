@@ -437,7 +437,7 @@
         if (index === 0) {
             let headers = [...row];
 
-            // Troca os títulos de coluna "Data do Romaneio" e "Observação" de posição
+            // **Troca os títulos "Data do Romaneio" e "Observação" de posição**
             [headers[columnIndexes["data do romaneio"]], headers[columnIndexes["observação"]]] =
                 [headers[columnIndexes["observação"]], headers[columnIndexes["data do romaneio"]]];
             return headers;
@@ -453,14 +453,14 @@
             row[columnIndexes["qtd enviada"]] = qtdEnviada.toLocaleString("pt-BR");
         }
 
-        // **Correção: "PESO TOTAL" e "ÁREA M² TOTAL" devem replicar os valores de "Peso (Kg)" e "Área Superfície"**
-        row[columnIndexes["peso total"]] = row[columnIndexes["peso (kg)"]];  // PESO TOTAL = PESO (Kg)
-        row[columnIndexes["área m² total"]] = row[columnIndexes["área superfície"]]; // ÁREA M² TOTAL = ÁREA SUPERFÍCIE
+        // **Correção: "PESO TOTAL" e "ÁREA M² TOTAL" replicam "Peso (Kg)" e "Área Superfície"**
+        row[columnIndexes["peso total"]] = row[columnIndexes["peso (kg)"]];
+        row[columnIndexes["área m² total"]] = row[columnIndexes["área superfície"]];
 
         row[columnIndexes["peso (kg)"]] = row[columnIndexes["peso (kg)"]]?.toString().replace(".", ",");
         row[columnIndexes["área superfície"]] = row[columnIndexes["área superfície"]]?.toString().replace(".", ",");
 
-        // Ajuste de formatação de datas para padrão brasileiro
+        // **Formatar datas corretamente**
         Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
             if (colName.toLowerCase().includes("data")) {
                 let dateValue = row[colIndex];
@@ -478,29 +478,22 @@
         return row;
     });
 
-    // **Garantir que a ordem das colunas no Excel gerado seja a mesma do arquivo original**
+    // **Garantir a ordem original das colunas do arquivo que você fez upload**
+    let columnOrder = [
+        "Serviço", "Posição / TAG", "Identificação 1", "Identificação 2", "REV", "Prog. Fab.",
+        "Executante", "Desenho Suporte", "Informações", "Tipo de Suporte", "Tipo Estrutura",
+        "Linha", "Isométrico", "Spool", "Qtde", "Qtde Enviada", "Saldo", "Peso (Kg)",
+        "Cond. Pintura", "Área Superfície", "Data Corte", "Data Acoplamento", "Data Solda",
+        "Data Jato/Pintura", "Número Romaneio", "Data Romaneio", "Data Recebimento",
+        "Observação", "Localização", "Status", "DATA DO ROMANEIO", "QTD ENVIADA",
+        "OBS ROMANEIO", "PESO Unitário", "PESO TOTAL", "AREA M² Unitário", "ÁREA M² TOTAL",
+        "Data Cadastro", "ID", "QR"
+    ];
+
     let orderedData = newData.map(row => {
-        let orderedRow = [];
-        let columnOrder = [
-            "Serviço", "Posição / TAG", "Identificação 1", "Identificação 2", "REV", "Prog. Fab.",
-            "Executante", "Desenho Suporte", "Informações", "Tipo de Suporte", "Tipo Estrutura",
-            "Linha", "Isométrico", "Spool", "Qtde", "Qtde Enviada", "Saldo", "Peso (Kg)",
-            "Cond. Pintura", "Área Superfície", "Data Corte", "Data Acoplamento", "Data Solda",
-            "Data Jato/Pintura", "Número Romaneio", "Data Romaneio", "Data Recebimento",
-            "Observação", "Localização", "Status", "DATA DO ROMANEIO", "QTD ENVIADA",
-            "OBS ROMANEIO", "PESO Unitário", "PESO TOTAL", "AREA M² Unitário", "ÁREA M² TOTAL",
-            "Data Cadastro", "ID", "QR"
-        ];
-
-        columnOrder.forEach(colName => {
-            if (columnIndexes[colName] !== undefined) {
-                orderedRow.push(row[columnIndexes[colName]]);
-            } else {
-                orderedRow.push("");  // Se não existir, adicionar célula vazia para manter alinhamento
-            }
+        return columnOrder.map(colName => {
+            return columnIndexes[colName] !== undefined ? row[columnIndexes[colName]] : "";
         });
-
-        return orderedRow;
     });
 
     const updatedSheet = XLSX.utils.aoa_to_sheet([columnOrder, ...orderedData]);
@@ -514,7 +507,6 @@
     XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
     XLSX.writeFile(newWorkbook, "romaneio.xlsx");
 }
-
 
         document.addEventListener("DOMContentLoaded", () => {
             const storedData = localStorage.getItem("uploadedData");
