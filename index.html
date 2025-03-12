@@ -437,7 +437,7 @@
     const columnOrder = [
         "Serviço", "Posição / TAG", "Identificação 1", "Identificação 2", "REV", "Prog. Fab.",
         "Executante", "Desenho Suporte", "Informações", "Tipo de Suporte", "Tipo Estrutura", "Linha",
-        "Isométrico", "Spool", "Qtde", "Qtde Enviada", "Saldo", "Cond. Pintura", "Data Corte",
+        "Isométrico", "Spool", "Qtde", "QTD ENVIADA", "Saldo", "Cond. Pintura", "Data Corte",
         "Data Acoplamento", "Data Solda", "Data Jato/Pintura", "Número Romaneio", "Data Romaneio",
         "Data Recebimento", "Observação", "Localização", "Status", "DATA DO ROMANEIO",
         "QTD ENVIADA", "OBS ROMANEIO", "PESO Unitário", "PESO TOTAL", "AREA m² Unitário",
@@ -458,7 +458,7 @@
         });
 
         // Índices das colunas para cálculos
-        let qtdEnviadaIndex = columnOrder.indexOf("Qtde Enviada");
+        let qtdEnviadaIndex = columnOrder.indexOf("QTD ENVIADA"); // Nome correto da coluna
         let pesoTotalIndex = columnOrder.indexOf("PESO TOTAL");
         let areaTotalIndex = columnOrder.indexOf("ÁREA m² TOTAL");
         let pesoUnitIndex = columnOrder.indexOf("PESO Unitário");
@@ -473,14 +473,14 @@
         let pesoKg = pesoKgIndex !== undefined ? parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")) || 0 : 0;
         let areaSuperficie = areaSuperficieIndex !== undefined ? parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")) || 0 : 0;
 
-        // Cálculo das colunas unitárias e totais APENAS se "Qtde Enviada" for um número válido
+        // Cálculo das colunas unitárias e totais APENAS se "QTD ENVIADA" for um número válido
         if (qtdEnviada && !isNaN(qtdEnviada) && qtdEnviada > 0) {
             newRow[pesoUnitIndex] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
             newRow[areaUnitIndex] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
             newRow[pesoTotalIndex] = (qtdEnviada * pesoKg).toFixed(2).replace(".", ",");
             newRow[areaTotalIndex] = (qtdEnviada * areaSuperficie).toFixed(2).replace(".", ",");
         } else {
-            newRow[pesoUnitIndex] = ""; // Deixa vazio se não houver Qtde Enviada
+            newRow[pesoUnitIndex] = ""; // Deixa vazio se não houver QTD ENVIADA
             newRow[areaUnitIndex] = "";
             newRow[pesoTotalIndex] = "";
             newRow[areaTotalIndex] = "";
