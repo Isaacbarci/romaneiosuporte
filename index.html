@@ -442,6 +442,7 @@
     let dataRomaneioIndex = columnIndexes["data do romaneio"];
     let statusIndex = columnIndexes["status"];
     let observacaoIndex = columnIndexes["observação"];
+    let dataRecebimentoIndex = columnIndexes["data recebimento"];
     let dataCadastroIndex = columnIndexes["data cadastro"]; // Removida
 
     let newData = data.map((row, index) => {
@@ -462,7 +463,10 @@
                 } else if (colIndex === statusIndex) {
                     reorderedHeader.push(header);
                     reorderedHeader.push(headerRow[dataRomaneioIndex]); // "DATA DO ROMANEIO" depois de "STATUS"
-                } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== dataCadastroIndex) {
+                } else if (colIndex === dataRecebimentoIndex) {
+                    reorderedHeader.push(header);
+                    reorderedHeader.push(headerRow[observacaoIndex]); // "OBSERVAÇÃO" depois de "DATA RECEBIMENTO"
+                } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== observacaoIndex && colIndex !== dataCadastroIndex) {
                     reorderedHeader.push(header);
                 }
             });
@@ -514,7 +518,10 @@
             } else if (colIndex === statusIndex) {
                 reorderedRow.push(cell);
                 reorderedRow.push(row[dataRomaneioIndex]); // "DATA DO ROMANEIO" depois de "STATUS"
-            } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== dataCadastroIndex) {
+            } else if (colIndex === dataRecebimentoIndex) {
+                reorderedRow.push(cell);
+                reorderedRow.push(row[observacaoIndex]); // "OBSERVAÇÃO" depois de "DATA RECEBIMENTO"
+            } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== observacaoIndex && colIndex !== dataCadastroIndex) {
                 reorderedRow.push(cell);
             }
         });
