@@ -447,18 +447,18 @@
 
     let newData = data.map((row, index) => {
         if (index === 0) {
-            // Reordenar cabeçalho
+            // Reordenar cabeçalho e renomear colunas
             let reorderedHeader = [];
             headerRow.forEach((header, colIndex) => {
                 if (colIndex === pesoUnitarioIndex) {
                     reorderedHeader.push(header);
                     if (pesoKgIndex !== undefined) {
-                        reorderedHeader.push(headerRow[pesoKgIndex]); // "Peso (Kg)" depois de "Peso Unitário"
+                        reorderedHeader.push("PESO TOTAL"); // Renomeado
                     }
                 } else if (colIndex === areaM2UnitarioIndex) {
                     reorderedHeader.push(header);
                     if (areaSuperficieIndex !== undefined) {
-                        reorderedHeader.push(headerRow[areaSuperficieIndex]); // "Área Superfície" depois de "Área M² Unitário"
+                        reorderedHeader.push("ÁREA M² TOTAL"); // Renomeado
                     }
                 } else if (colIndex === statusIndex) {
                     reorderedHeader.push(header);
@@ -508,12 +508,12 @@
             if (colIndex === pesoUnitarioIndex) {
                 reorderedRow.push(cell);
                 if (pesoKgIndex !== undefined) {
-                    reorderedRow.push(row[pesoKgIndex]);
+                    reorderedRow.push(row[pesoKgIndex]); // Agora "PESO TOTAL"
                 }
             } else if (colIndex === areaM2UnitarioIndex) {
                 reorderedRow.push(cell);
                 if (areaSuperficieIndex !== undefined) {
-                    reorderedRow.push(row[areaSuperficieIndex]);
+                    reorderedRow.push(row[areaSuperficieIndex]); // Agora "ÁREA M² TOTAL"
                 }
             } else if (colIndex === statusIndex) {
                 reorderedRow.push(cell);
@@ -540,7 +540,6 @@
     XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
     XLSX.writeFile(newWorkbook, "romaneio.xlsx");
 }
-
 
         document.addEventListener("DOMContentLoaded", () => {
             const storedData = localStorage.getItem("uploadedData");
