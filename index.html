@@ -441,7 +441,7 @@
         "Data Acoplamento", "Data Solda", "Data Jato/Pintura", "Número Romaneio", "Data Romaneio",
         "Data Recebimento", "Observação", "Localização", "Status", "DATA DO ROMANEIO",
         "QTD ENVIADA", "OBS ROMANEIO", "PESO Unitário", "PESO TOTAL", "AREA m² Unitário",
-        "ÁREA m² TOTAL", "Data Cadastro", "ID", "QR"
+        "ÁREA m² TOTAL", "Peso (Kg)", "Área Superfície", "Data Cadastro", "ID", "QR"
     ];
 
     // Criar um novo conjunto de dados reorganizado
@@ -458,36 +458,44 @@
         });
 
         // Índices das colunas para cálculos
-        let qtdEnviadaIndex = columnOrder.indexOf("QTD ENVIADA"); // Nome correto da coluna
+        let qtdEnviadaIndex = columnOrder.indexOf("QTD ENVIADA");
         let pesoTotalIndex = columnOrder.indexOf("PESO TOTAL");
         let areaTotalIndex = columnOrder.indexOf("ÁREA m² TOTAL");
         let pesoUnitIndex = columnOrder.indexOf("PESO Unitário");
         let areaUnitIndex = columnOrder.indexOf("AREA m² Unitário");
+        let pesoKgIndex = columnOrder.indexOf("Peso (Kg)");
+        let areaSuperficieIndex = columnOrder.indexOf("Área Superfície");
 
         // Índices das colunas de origem dos cálculos
-        let pesoKgIndex = columnIndexes["peso (kg)"];
-        let areaSuperficieIndex = columnIndexes["área superfície"];
+        let pesoOrigIndex = columnIndexes["peso (kg)"];
+        let areaOrigIndex = columnIndexes["área superfície"];
 
         // Obter valores necessários para cálculo
         let qtdEnviada = newRow[qtdEnviadaIndex] ? parseFloat(newRow[qtdEnviadaIndex].toString().replace(",", ".")) : null;
-        let pesoKg = pesoKgIndex !== undefined ? parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")) || 0 : 0;
-        let areaSuperficie = areaSuperficieIndex !== undefined ? parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")) || 0 : 0;
+        let pesoKg = pesoOrigIndex !== undefined ? parseFloat(row[pesoOrigIndex]?.toString().replace(",", ".")) || 0 : 0;
+        let areaSuperficie = areaOrigIndex !== undefined ? parseFloat(row[areaOrigIndex]?.toString().replace(",", ".")) || 0 : 0;
 
-        // Cálculo das colunas unitárias e totais APENAS se "QTD ENVIADA" for um número válido
+        // Mantendo valores originais das colunas Peso (Kg) e Área Superfície
+        newRow[pesoKgIndex] = pesoKg.toFixed(2).replace(".", ",");
+        newRow[areaSuperficieIndex] = areaSuperficie.toFixed(2).replace(".", ",");
+
+        // PESO TOTAL = mesmo valor de Peso (Kg)
+        newRow[pesoTotalIndex] = pesoKg.toFixed(2).replace(".", ",");
+
+        // ÁREA m² TOTAL = mesmo valor de Área Superfície
+        newRow[areaTotalIndex] = areaSuperficie.toFixed(2).replace(".", ",");
+
+        // Cálculo das colunas unitárias APENAS se "QTD ENVIADA" for um número válido
         if (qtdEnviada && !isNaN(qtdEnviada) && qtdEnviada > 0) {
             newRow[pesoUnitIndex] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
             newRow[areaUnitIndex] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
-            newRow[pesoTotalIndex] = (qtdEnviada * pesoKg).toFixed(2).replace(".", ",");
-            newRow[areaTotalIndex] = (qtdEnviada * areaSuperficie).toFixed(2).replace(".", ",");
         } else {
             newRow[pesoUnitIndex] = ""; // Deixa vazio se não houver QTD ENVIADA
             newRow[areaUnitIndex] = "";
-            newRow[pesoTotalIndex] = "";
-            newRow[areaTotalIndex] = "";
         }
 
-        // Ajustando o formato das datas
-        ["Data Romaneio", "Data Corte", "Data Acoplamento", "Data Solda", "Data Jato/Pintura", "Data Recebimento", "Data Cadastro"].forEach(colName => {
+        // Ajustando o formato das datas, incluindo "DATA DO ROMANEIO"
+        ["Data Romaneio", "Data Corte", "Data Acoplamento", "Data Solda", "Data Jato/Pintura", "Data Recebimento", "Data Cadastro", "DATA DO ROMANEIO"].forEach(colName => {
             let colIdx = columnOrder.indexOf(colName);
             if (colIdx !== -1) {
                 let dateValue = newRow[colIdx];
