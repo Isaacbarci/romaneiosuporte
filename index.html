@@ -441,7 +441,7 @@
         "data acoplamento", "data solda", "data jato/pintura", "número romaneio", "data romaneio",
         "data recebimento", "observação", "localização", "status", "data do romaneio",
         "qtd enviada", "obs romaneio", "peso unitário", "peso total", "area m² unitário",
-        "área m² total", "id", "qr"
+        "área m² total", "data cadastro", "id", "qr"
     ];
 
     // Criar um novo conjunto de dados reorganizado
@@ -460,20 +460,30 @@
             return colIndex !== undefined ? row[colIndex] : "";
         });
 
-        // Obter valores necessários para cálculo
-        let qtdEnviada = parseFloat(newRow[columnOrder.indexOf("qtde enviada")]?.toString().replace(",", ".")) || 0;
-        let pesoKg = parseFloat(newRow[columnOrder.indexOf("peso total")]?.toString().replace(",", ".")) || 0;
-        let areaSuperficie = parseFloat(newRow[columnOrder.indexOf("área m² total")]?.toString().replace(",", ".")) || 0;
+        // Pegando índices das colunas necessárias
+        let qtdEnviadaIndex = columnOrder.indexOf("qtde enviada");
+        let pesoTotalIndex = columnOrder.indexOf("peso total");
+        let areaTotalIndex = columnOrder.indexOf("área m² total");
+        let pesoUnitIndex = columnOrder.indexOf("peso unitário");
+        let areaUnitIndex = columnOrder.indexOf("area m² unitário");
 
-        // Cálculo das colunas Peso Unitário e Área m² Unitário
-        if (qtdEnviada > 0) {
-            newRow[columnOrder.indexOf("peso unitário")] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
-            newRow[columnOrder.indexOf("area m² unitário")] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
+        // Obter valores necessários para cálculo
+        let qtdEnviada = parseFloat((newRow[qtdEnviadaIndex] || "0").toString().replace(",", "."));
+        let pesoKg = parseFloat((newRow[pesoTotalIndex] || "0").toString().replace(",", "."));
+        let areaSuperficie = parseFloat((newRow[areaTotalIndex] || "0").toString().replace(",", "."));
+
+        // Verifica se a Qtde Enviada é maior que zero antes de calcular
+        if (!isNaN(qtdEnviada) && qtdEnviada > 0) {
+            newRow[pesoUnitIndex] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
+            newRow[areaUnitIndex] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
+        } else {
+            newRow[pesoUnitIndex] = "0,00";
+            newRow[areaUnitIndex] = "0,00";
         }
 
         // Formatando as colunas numéricas para exibição no Excel
-        newRow[columnOrder.indexOf("peso total")] = pesoKg.toFixed(2).replace(".", ",");
-        newRow[columnOrder.indexOf("área m² total")] = areaSuperficie.toFixed(2).replace(".", ",");
+        newRow[pesoTotalIndex] = pesoKg.toFixed(2).replace(".", ",");
+        newRow[areaTotalIndex] = areaSuperficie.toFixed(2).replace(".", ",");
 
         // Ajustando o formato das datas
         ["data do romaneio", "data corte", "data acoplamento", "data solda", "data jato/pintura", "data recebimento", "data cadastro"].forEach(colName => {
