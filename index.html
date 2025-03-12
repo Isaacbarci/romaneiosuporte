@@ -441,7 +441,7 @@
         "Data Acoplamento", "Data Solda", "Data Jato/Pintura", "Número Romaneio", "Data Romaneio",
         "Data Recebimento", "Observação", "Localização", "Status", "DATA DO ROMANEIO",
         "QTD ENVIADA", "OBS ROMANEIO", "PESO Unitário", "PESO TOTAL", "AREA m² Unitário",
-        "ÁREA m² TOTAL", "Peso (Kg)", "Área Superfície", "Data Cadastro", "ID", "QR"
+        "ÁREA m² TOTAL", "Data Cadastro", "ID", "QR"
     ];
 
     // Criar um novo conjunto de dados reorganizado
@@ -463,8 +463,6 @@
         let areaTotalIndex = columnOrder.indexOf("ÁREA m² TOTAL");
         let pesoUnitIndex = columnOrder.indexOf("PESO Unitário");
         let areaUnitIndex = columnOrder.indexOf("AREA m² Unitário");
-        let pesoKgIndex = columnOrder.indexOf("Peso (Kg)");
-        let areaSuperficieIndex = columnOrder.indexOf("Área Superfície");
 
         // Índices das colunas de origem dos cálculos
         let pesoOrigIndex = columnIndexes["peso (kg)"];
@@ -474,10 +472,6 @@
         let qtdEnviada = newRow[qtdEnviadaIndex] ? parseFloat(newRow[qtdEnviadaIndex].toString().replace(",", ".")) : null;
         let pesoKg = pesoOrigIndex !== undefined ? parseFloat(row[pesoOrigIndex]?.toString().replace(",", ".")) || 0 : 0;
         let areaSuperficie = areaOrigIndex !== undefined ? parseFloat(row[areaOrigIndex]?.toString().replace(",", ".")) || 0 : 0;
-
-        // Mantendo valores originais das colunas Peso (Kg) e Área Superfície
-        newRow[pesoKgIndex] = pesoKg.toFixed(2).replace(".", ",");
-        newRow[areaSuperficieIndex] = areaSuperficie.toFixed(2).replace(".", ",");
 
         // PESO TOTAL = mesmo valor de Peso (Kg)
         newRow[pesoTotalIndex] = pesoKg.toFixed(2).replace(".", ",");
@@ -513,10 +507,14 @@
     // Criar a nova planilha
     const updatedSheet = XLSX.utils.aoa_to_sheet(reorderedData);
 
-    // Ajustar a largura das colunas automaticamente
-    updatedSheet["!cols"] = reorderedData[0].map((_, index) => {
+    // Ocultar colunas "Peso (Kg)" e "Área Superfície"
+    const hiddenColumns = ["Peso (Kg)", "Área Superfície"];
+    updatedSheet["!cols"] = reorderedData[0].map((col, index) => {
         let maxLength = Math.max(...reorderedData.map(row => (row[index] ? row[index].toString().length : 0)));
-        return { wch: maxLength + 2 };
+        return {
+            wch: maxLength + 2,
+            hidden: hiddenColumns.includes(col) ? true : undefined // Oculta as colunas
+        };
     });
 
     // Criar e salvar o arquivo Excel
