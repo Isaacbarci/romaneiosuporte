@@ -438,7 +438,7 @@
     let areaSuperficieIndex = columnIndexes["área superfície"];
     let pesoUnitarioIndex = columnIndexes["peso unitário"];
     let areaM2UnitarioIndex = columnIndexes["area m² unitário"];
-    let qtdEnviadaIndex = columnIndexes["qtd enviada"];
+    let qtdeIndex = columnIndexes["qtde"]; // Agora usando "Qtde" no cálculo
 
     let newData = data.map((row, index) => {
         if (index === 0) {
@@ -463,19 +463,23 @@
             return reorderedHeader;
         }
 
-        let qtdEnviada = parseFloat(row[qtdEnviadaIndex]?.toString().replace(",", ".")) || 0;
+        let qtde = parseFloat(row[qtdeIndex]?.toString().replace(",", ".")) || 0;
         let pesoKg = parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")) || 0;
         let areaSuperficie = parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")) || 0;
 
-        if (!isNaN(qtdEnviada) && qtdEnviada > 0) {
-            row[pesoUnitarioIndex] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
-            row[areaM2UnitarioIndex] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
-            row[qtdEnviadaIndex] = qtdEnviada.toLocaleString("pt-BR");
+        // Calcula "Peso Unitário" e "Área M² Unitário" com base na "Qtde"
+        if (qtde > 0) {
+            row[pesoUnitarioIndex] = (pesoKg / qtde).toFixed(2).replace(".", ",");
+            row[areaM2UnitarioIndex] = (areaSuperficie / qtde).toFixed(2).replace(".", ",");
+        } else {
+            row[pesoUnitarioIndex] = "0,00";
+            row[areaM2UnitarioIndex] = "0,00";
         }
 
         row[pesoKgIndex] = row[pesoKgIndex]?.toString().replace(".", ",");
         row[areaSuperficieIndex] = row[areaSuperficieIndex]?.toString().replace(".", ",");
 
+        // Formatar datas para o Excel
         Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
             if (colName.includes("data")) {
                 let dateValue = row[colIndex];
@@ -487,6 +491,7 @@
             }
         });
 
+        // Reorganizar os valores no array
         let reorderedRow = [];
         row.forEach((cell, colIndex) => {
             if (colIndex === pesoUnitarioIndex) {
