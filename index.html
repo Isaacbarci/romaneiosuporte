@@ -438,10 +438,11 @@
     let areaSuperficieIndex = columnIndexes["área superfície"];
     let pesoUnitarioIndex = columnIndexes["peso unitário"];
     let areaM2UnitarioIndex = columnIndexes["area m² unitário"];
-    let qtdeIndex = columnIndexes["qtde"]; // Agora usando "Qtde" no cálculo
+    let qtdeIndex = columnIndexes["qtde"];
     let dataRomaneioIndex = columnIndexes["data do romaneio"];
+    let statusIndex = columnIndexes["status"];
     let observacaoIndex = columnIndexes["observação"];
-    let dataCadastroIndex = columnIndexes["data cadastro"]; // Remover esta coluna
+    let dataCadastroIndex = columnIndexes["data cadastro"]; // Removida
 
     let newData = data.map((row, index) => {
         if (index === 0) {
@@ -458,11 +459,10 @@
                     if (areaSuperficieIndex !== undefined) {
                         reorderedHeader.push(headerRow[areaSuperficieIndex]); // "Área Superfície" depois de "Área M² Unitário"
                     }
-                } else if (colIndex === dataRomaneioIndex) {
-                    // Trocar "DATA DO ROMANEIO" com "OBSERVAÇÃO"
-                    reorderedHeader.push(headerRow[observacaoIndex]);
+                } else if (colIndex === statusIndex) {
                     reorderedHeader.push(header);
-                } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== observacaoIndex && colIndex !== dataCadastroIndex) {
+                    reorderedHeader.push(headerRow[dataRomaneioIndex]); // "DATA DO ROMANEIO" depois de "STATUS"
+                } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== dataCadastroIndex) {
                     reorderedHeader.push(header);
                 }
             });
@@ -511,11 +511,10 @@
                 if (areaSuperficieIndex !== undefined) {
                     reorderedRow.push(row[areaSuperficieIndex]);
                 }
-            } else if (colIndex === dataRomaneioIndex) {
-                // Trocar "DATA DO ROMANEIO" com "OBSERVAÇÃO"
-                reorderedRow.push(row[observacaoIndex]);
+            } else if (colIndex === statusIndex) {
                 reorderedRow.push(cell);
-            } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== observacaoIndex && colIndex !== dataCadastroIndex) {
+                reorderedRow.push(row[dataRomaneioIndex]); // "DATA DO ROMANEIO" depois de "STATUS"
+            } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== dataCadastroIndex) {
                 reorderedRow.push(cell);
             }
         });
