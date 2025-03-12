@@ -427,61 +427,67 @@
             }
         }
 
-        function downloadExcel() {
-            if (!data.length) {
-                alert("Nenhum dado carregado para exportar.");
-                return;
-            }
+       function downloadExcel() {
+    if (!data.length) {
+        alert("Nenhum dado carregado para exportar.");
+        return;
+    }
 
-            let newData = data.map((row, index) => {
-                if (index === 0) {
-                    let headers = [...row];
-                    [headers[columnIndexes["data do romaneio"]], headers[columnIndexes["observação"]]] =
-                        [headers[columnIndexes["observação"]], headers[columnIndexes["data do romaneio"]]];
-                    return headers;
-                }
-
-                let qtdEnviada = parseFloat(row[columnIndexes["qtd enviada"]]?.toString().replace(",", "."));
-                let pesoKg = parseFloat(row[columnIndexes["peso (kg)"]]?.toString().replace(",", ".")) || 0;
-                let areaSuperficie = parseFloat(row[columnIndexes["área superfície"]]?.toString().replace(",", ".")) || 0;
-
-                if (!isNaN(qtdEnviada) && qtdEnviada > 0) {
-                    row[columnIndexes["peso unitário"]] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
-                    row[columnIndexes["area m² unitário"]] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
-                    row[columnIndexes["qtd enviada"]] = qtdEnviada.toLocaleString("pt-BR");
-                }
-
-                row[columnIndexes["peso (kg)"]] = row[columnIndexes["peso (kg)"]]?.toString().replace(".", ",");
-                row[columnIndexes["área superfície"]] = row[columnIndexes["área superfície"]]?.toString().replace(".", ",");
-
-                Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
-                    if (colName.includes("data")) {
-                        let dateValue = row[colIndex];
-                        if (dateValue && !isNaN(new Date(dateValue))) {
-                            let dateObj = new Date(dateValue);
-                            dateObj.setDate(dateObj.getDate() + 1);
-                            row[colIndex] = dateObj.toLocaleDateString("pt-BR");
-                        }
-                    }
-                });
-
-                [row[columnIndexes["data do romaneio"]], row[columnIndexes["observação"]]] =
-                    [row[columnIndexes["observação"]], row[columnIndexes["data do romaneio"]]];
-
-                return row;
-            });
-
-            const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
-
-            updatedSheet["!cols"] = newData[0].map((_, index) => {
-                let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
-                return { wch: maxLength + 2 };
-            });
-
-            const newWorkbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
-            XLSX.writeFile(newWorkbook, "romaneio.xlsx");
+    let newData = data.map((row, index) => {
+        if (index === 0) {
+            let headers = [...row];
+            [headers[columnIndexes["data do romaneio"]], headers[columnIndexes["observação"]]] =
+                [headers[columnIndexes["observação"]], headers[columnIndexes["data do romaneio"]]];
+            return headers;
         }
+
+        let qtdEnviada = parseFloat(row[columnIndexes["qtd enviada"]]?.toString().replace(",", ".")) || 0;
+        let pesoKg = parseFloat(row[columnIndexes["peso (kg)"]]?.toString().replace(",", ".")) || 0;
+        let areaSuperficie = parseFloat(row[columnIndexes["área superfície"]]?.toString().replace(",", ".")) || 0;
+
+        if (!isNaN(qtdEnviada) && qtdEnviada > 0) {
+            row[columnIndexes["peso unitário"]] = (pesoKg / qtdEnviada).toFixed(2).replace(".", ",");
+            row[columnIndexes["area m² unitário"]] = (areaSuperficie / qtdEnviada).toFixed(2).replace(".", ",");
+
+            row[columnIndexes["qtd enviada"]] = qtdEnviada.toLocaleString("pt-BR");
+        }
+
+        // **Correção: Replicar valores corretos**
+        row[columnIndexes["peso total"]] = row[columnIndexes["peso (kg)"]];  // PESO TOTAL = PESO (Kg)
+        row[columnIndexes["área m² total"]] = row[columnIndexes["área superfície"]]; // ÁREA M² TOTAL = ÁREA SUPERFÍCIE
+
+        row[columnIndexes["peso (kg)"]] = row[columnIndexes["peso (kg)"]]?.toString().replace(".", ",");
+        row[columnIndexes["área superfície"]] = row[columnIndexes["área superfície"]]?.toString().replace(".", ",");
+
+        Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
+            if (colName.includes("data")) {
+                let dateValue = row[colIndex];
+                if (dateValue && !isNaN(new Date(dateValue))) {
+                    let dateObj = new Date(dateValue);
+                    dateObj.setDate(dateObj.getDate() + 1);
+                    row[colIndex] = dateObj.toLocaleDateString("pt-BR");
+                }
+            }
+        });
+
+        [row[columnIndexes["data do romaneio"]], row[columnIndexes["observação"]]] =
+            [row[columnIndexes["observação"]], row[columnIndexes["data do romaneio"]]];
+
+        return row;
+    });
+
+    const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
+
+    updatedSheet["!cols"] = newData[0].map((_, index) => {
+        let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
+        return { wch: maxLength + 2 };
+    });
+
+    const newWorkbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
+    XLSX.writeFile(newWorkbook, "romaneio.xlsx");
+}
+
 
         document.addEventListener("DOMContentLoaded", () => {
             const storedData = localStorage.getItem("uploadedData");
