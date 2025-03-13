@@ -414,6 +414,9 @@
                 return;
             }
 
+          let newData = data.map(row => row.filter((_, colIndex) => data[0][colIndex].toLowerCase() !== "data cadastro"));
+
+
             let headerRow = [...data[0]];
             let pesoKgIndex = columnIndexes["peso (kg)"];
             let areaSuperficieIndex = columnIndexes["área superfície"];
