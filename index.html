@@ -414,7 +414,6 @@
                 return;
             }
 
-          let newData = data.map(row => row.filter((_, colIndex) => data[0][colIndex].toLowerCase() !== "data cadastro"));
 
 
             let headerRow = [...data[0]];
@@ -428,8 +427,9 @@
             let observacaoIndex = columnIndexes["observação"];
             let dataRecebimentoIndex = columnIndexes["data recebimento"];
 
-            let newData = data.map((row, index) => {
-                if (index === 0) {
+              let newData = data.map(row => row.filter((_, colIndex) => data[0][colIndex].toLowerCase() !== "data cadastro"));
+
+
                     let reorderedHeader = [];
                     headerRow.forEach((header, colIndex) => {
                         if (colIndex === pesoUnitarioIndex) {
