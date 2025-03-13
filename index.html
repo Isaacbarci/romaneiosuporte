@@ -155,7 +155,7 @@
         <label>Posição / TAG: <input type="text" id="POSICAOTAG" readonly></label>
         <label>Identificação 1: <input type="text" id="IDENTIFICACAO1" readonly></label>
         <label>Identificação 2: <input type="text" id="IDENTIFICACAO2" readonly></label>
-        <label>Peso (Kg): <input type="text" id="Peso (Kg)" readonly></label>
+        <label>Peso total): <input type="text" id="PESO TOTAL" readonly></label>
         <label>Data do Romaneio: <input type="date" id="DATADOROMANEIO"></label>
         <label>Qtd Enviada: <input type="text" id="QTDENVIADA"></label>
         <label>Obs Romaneio: <input type="text" id="OBSROMANEIO"></label>
@@ -337,7 +337,7 @@
             document.getElementById("POSICAOTAG").value = data[index][columnIndexes["posição / tag"]] || "";
             document.getElementById("IDENTIFICACAO1").value = data[index][columnIndexes["identificação 1"]] || "";
             document.getElementById("IDENTIFICACAO2").value = data[index][columnIndexes["identificação 2"]] || "";
-            document.getElementById("Peso (Kg)").value = data[index][columnIndexes["peso (Kg)"]] || "";
+            document.getElementById("PESO TOTAL").value = data[index][columnIndexes["peso total)"]] || "";
             document.getElementById("DATADOROMANEIO").value = formatDateForInput(data[index][columnIndexes["data do romaneio"]]);
             document.getElementById("QTDENVIADA").value = data[index][columnIndexes["qtd enviada"]] || "";
             document.getElementById("OBSROMANEIO").value = data[index][columnIndexes["obs romaneio"]] || "";
