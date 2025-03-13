@@ -337,8 +337,7 @@
             document.getElementById("POSICAOTAG").value = data[index][columnIndexes["posição / tag"]] || "";
             document.getElementById("IDENTIFICACAO1").value = data[index][columnIndexes["identificação 1"]] || "";
             document.getElementById("IDENTIFICACAO2").value = data[index][columnIndexes["identificação 2"]] || "";
-            let pesoValue = dataEntry[columnIndexes["Peso (Kg)"]] || "";
-        document.getElementById('PesoKg').value = pesoValue;
+            document.getElementById("PesoKg").value = data[index][columnIndexes["Peso (Kg)"]] || "";
             document.getElementById("DATADOROMANEIO").value = formatDateForInput(data[index][columnIndexes["data do romaneio"]]);
             document.getElementById("QTDENVIADA").value = data[index][columnIndexes["qtd enviada"]] || "";
             document.getElementById("OBSROMANEIO").value = data[index][columnIndexes["obs romaneio"]] || "";
