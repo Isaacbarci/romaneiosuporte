@@ -129,13 +129,21 @@
     </style>
 </head>
 <body>
-    <h2>ROMANEIO DE SUPORTE</h2>
-    <select id="fileList">
-        <option value="">Selecione um arquivo</option>
-        <option value="Patio de Madeira.xlsx">Patio de Madeira</option>
-        <option value="Raizen.xlsx">Raizen</option>
-        <option value="Eldorado.xlsx">Eldorado</option>
-    </select>
+ <!-- Cabeçalho com Logo e Título -->
+  <h2 style="display: flex; align-items: center;">
+    <img src="image.png" alt="Logo" style="height: 40px; width: 95px; margin-right: 5px; margin-left: -15px;">
+    ROMANEIO DE SPOOL
+</h2>
+<p style="font-size: 6px; color: white; margin-left: 17px; margin-top: -14px;">
+    Developed by Isaac Dutra
+</p>
+
+    <select id="fileList" style="margin-left: 5px;">
+    <option value="">Selecione um arquivo</option>
+    <option value="Compressores.xlsx">Compressores</option>
+    <option value="Raizen.xlsx">Raizen</option>
+
+</select>
     <button onclick="confirmUpdate()">Atualizar Arquivo</button>
     <input type="text" id="identificacaoFilter" placeholder="Filtrar por QR ou Identificação" onkeyup="applyFilter()">
     <button onclick="downloadExcel()">Download Excel</button>
