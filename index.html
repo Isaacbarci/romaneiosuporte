@@ -347,7 +347,7 @@
             table.appendChild(fragment);
         }
 
-          function openEditModal(index) {
+            function openEditModal(index) {
             if (index < 0 || index >= data.length) return;
 
             document.getElementById("editIndex").value = index;
@@ -361,20 +361,26 @@
             document.getElementById("OBSROMANEIO").value = data[index][columnIndexes["obs romaneio"]] || "";
             document.getElementById("Qtde").value = data[index][columnIndexes["qtde"]] || "";
 
-            const saldo = data[index][columnIndexes["saldo"]] || 0;
+            const saldo = parseFloat(data[index][columnIndexes["saldo"]] || 0);
             const saldoInput = document.getElementById("Saldo");
             saldoInput.value = saldo;
 
             // Aplicar estilo com base no valor do saldo
             if (saldo <= 0) {
-                saldoInput.classList.remove("saldo-positivo");
                 saldoInput.classList.add("saldo-negativo");
+                saldoInput.classList.remove("saldo-positivo");
             } else {
-                saldoInput.classList.remove("saldo-negativo");
                 saldoInput.classList.add("saldo-positivo");
+                saldoInput.classList.remove("saldo-negativo");
             }
 
             document.getElementById("editModal").style.display = "block";
+        }
+
+        function closeModal() {
+            const saldoInput = document.getElementById("Saldo");
+            saldoInput.classList.remove("saldo-negativo", "saldo-positivo"); // Limpa os estilos ao fechar o modal
+            document.getElementById("editModal").style.display = "none";
         }
 
         function saveEdit() {
