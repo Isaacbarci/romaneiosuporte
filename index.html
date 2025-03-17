@@ -464,29 +464,37 @@
             return reorderedHeader;
         }
 
-        // Converter valores para números
-        let qtde = parseFloat(row[qtdeIndex]?.toString().replace(",", ".")) || 0;
-        let qtdeEnviada = parseFloat(row[qtdeEnviadaIndex]?.toString().replace(",", ".")) || 0;
-        let saldo = parseFloat(row[saldoIndex]?.toString().replace(",", ".")) || 0;
-        let qtdEnviada = parseFloat(row[qtdEnviadaIndex]?.toString().replace(",", ".")) || 0;
-        let pesoKg = parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")) || 0;
-        let areaSuperficie = parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")) || 0;
+        // Função para converter valores vazios ou nulos para undefined
+        const parseValue = (value) => {
+            if (value === "" || value === null || value === undefined) {
+                return undefined; // Mantém o valor vazio
+            }
+            return parseFloat(value.toString().replace(",", ".")); // Converte para número
+        };
 
-        // Atualizar valores das colunas
-        if (qtde > 0) {
+        // Converter valores para números (ou manter vazio)
+        let qtde = parseValue(row[qtdeIndex]);
+        let qtdeEnviada = parseValue(row[qtdeEnviadaIndex]);
+        let saldo = parseValue(row[saldoIndex]);
+        let qtdEnviada = parseValue(row[qtdEnviadaIndex]);
+        let pesoKg = parseValue(row[pesoKgIndex]);
+        let areaSuperficie = parseValue(row[areaSuperficieIndex]);
+
+        // Atualizar valores das colunas (apenas se não forem vazios)
+        if (qtde !== undefined && qtde > 0) {
             row[pesoUnitarioIndex] = parseFloat((pesoKg / qtde).toFixed(2)); // Número
             row[areaM2UnitarioIndex] = parseFloat((areaSuperficie / qtde).toFixed(2)); // Número
         } else {
-            row[pesoUnitarioIndex] = 0.00; // Número
-            row[areaM2UnitarioIndex] = 0.00; // Número
+            row[pesoUnitarioIndex] = undefined; // Mantém vazio
+            row[areaM2UnitarioIndex] = undefined; // Mantém vazio
         }
 
-        row[pesoKgIndex] = parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")); // Número
-        row[areaSuperficieIndex] = parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")); // Número
-        row[qtdeIndex] = qtde; // Número
-        row[qtdeEnviadaIndex] = qtdeEnviada; // Número
-        row[saldoIndex] = saldo; // Número
-        row[qtdEnviadaIndex] = qtdEnviada; // Número
+        row[pesoKgIndex] = pesoKg !== undefined ? pesoKg : undefined; // Mantém vazio
+        row[areaSuperficieIndex] = areaSuperficie !== undefined ? areaSuperficie : undefined; // Mantém vazio
+        row[qtdeIndex] = qtde !== undefined ? qtde : undefined; // Mantém vazio
+        row[qtdeEnviadaIndex] = qtdeEnviada !== undefined ? qtdeEnviada : undefined; // Mantém vazio
+        row[saldoIndex] = saldo !== undefined ? saldo : undefined; // Mantém vazio
+        row[qtdEnviadaIndex] = qtdEnviada !== undefined ? qtdEnviada : undefined; // Mantém vazio
 
         // Formatar datas
         Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
@@ -504,23 +512,23 @@
         let reorderedRow = [];
         row.forEach((cell, colIndex) => {
             if (colIndex === pesoUnitarioIndex) {
-                reorderedRow.push(cell);
+                reorderedRow.push(cell !== undefined ? cell : ""); // Mantém vazio
                 if (pesoKgIndex !== undefined) {
-                    reorderedRow.push(row[pesoKgIndex]);
+                    reorderedRow.push(row[pesoKgIndex] !== undefined ? row[pesoKgIndex] : ""); // Mantém vazio
                 }
             } else if (colIndex === areaM2UnitarioIndex) {
-                reorderedRow.push(cell);
+                reorderedRow.push(cell !== undefined ? cell : ""); // Mantém vazio
                 if (areaSuperficieIndex !== undefined) {
-                    reorderedRow.push(row[areaSuperficieIndex]);
+                    reorderedRow.push(row[areaSuperficieIndex] !== undefined ? row[areaSuperficieIndex] : ""); // Mantém vazio
                 }
             } else if (colIndex === statusIndex) {
-                reorderedRow.push(cell);
-                reorderedRow.push(row[dataRomaneioIndex]);
+                reorderedRow.push(cell !== undefined ? cell : ""); // Mantém vazio
+                reorderedRow.push(row[dataRomaneioIndex] !== undefined ? row[dataRomaneioIndex] : ""); // Mantém vazio
             } else if (colIndex === dataRecebimentoIndex) {
-                reorderedRow.push(cell);
-                reorderedRow.push(row[observacaoIndex]);
+                reorderedRow.push(cell !== undefined ? cell : ""); // Mantém vazio
+                reorderedRow.push(row[observacaoIndex] !== undefined ? row[observacaoIndex] : ""); // Mantém vazio
             } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== observacaoIndex) {
-                reorderedRow.push(cell);
+                reorderedRow.push(cell !== undefined ? cell : ""); // Mantém vazio
             }
         });
 
