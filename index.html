@@ -416,7 +416,7 @@
             }
         }
 
-       function downloadExcel() {
+        function downloadExcel() {
     if (!data.length) {
         alert("Nenhum dado carregado para exportar.");
         return;
@@ -466,15 +466,15 @@
         let areaSuperficie = parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")) || 0;
 
         if (qtde > 0) {
-            row[pesoUnitarioIndex] = (pesoKg / qtde).toFixed(2).replace(".", ",").toString();
-            row[areaM2UnitarioIndex] = (areaSuperficie / qtde).toFixed(2).replace(".", ",").toString();
+            row[pesoUnitarioIndex] = parseFloat((pesoKg / qtde).toFixed(2)); // Converter para número
+            row[areaM2UnitarioIndex] = parseFloat((areaSuperficie / qtde).toFixed(2)); // Converter para número
         } else {
-            row[pesoUnitarioIndex] = "0,00";
-            row[areaM2UnitarioIndex] = "0,00";
+            row[pesoUnitarioIndex] = 0.00; // Número
+            row[areaM2UnitarioIndex] = 0.00; // Número
         }
 
-        row[pesoKgIndex] = row[pesoKgIndex]?.toString().replace(".", ",");
-        row[areaSuperficieIndex] = row[areaSuperficieIndex]?.toString().replace(".", ",");
+        row[pesoKgIndex] = parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")); // Converter para número
+        row[areaSuperficieIndex] = parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")); // Converter para número
 
         Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
             if (colName.includes("data") && colName !== "data cadastro") {
@@ -492,12 +492,12 @@
             if (colIndex === pesoUnitarioIndex) {
                 reorderedRow.push(cell);
                 if (pesoKgIndex !== undefined) {
-                    reorderedRow.push(row[pesoKgIndex].toString());
+                    reorderedRow.push(row[pesoKgIndex]);
                 }
             } else if (colIndex === areaM2UnitarioIndex) {
                 reorderedRow.push(cell);
                 if (areaSuperficieIndex !== undefined) {
-                    reorderedRow.push(row[areaSuperficieIndex].toString());
+                    reorderedRow.push(row[areaSuperficieIndex]);
                 }
             } else if (colIndex === statusIndex) {
                 reorderedRow.push(cell);
