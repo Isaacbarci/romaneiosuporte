@@ -416,13 +416,11 @@
             }
         }
 
-        function downloadExcel() {
+   function downloadExcel() {
             if (!data.length) {
                 alert("Nenhum dado carregado para exportar.");
                 return;
             }
-
-
 
             let headerRow = [...data[0]];
             let pesoKgIndex = columnIndexes["peso (kg)"];
@@ -436,33 +434,7 @@
             let dataRecebimentoIndex = columnIndexes["data recebimento"];
 
             let newData = data.map((row, index) => {
-                if (index === 0) {
-
-                    let reorderedHeader = [];
-                    headerRow.forEach((header, colIndex) => {
-                        if (colIndex === pesoUnitarioIndex) {
-                            reorderedHeader.push(header);
-                            if (pesoKgIndex !== undefined) {
-                                reorderedHeader.push("PESO TOTAL");
-                            }
-                        } else if (colIndex === areaM2UnitarioIndex) {
-                            reorderedHeader.push(header);
-                            if (areaSuperficieIndex !== undefined) {
-                                reorderedHeader.push("ÁREA M² TOTAL");
-                            }
-                        } else if (colIndex === statusIndex) {
-                            reorderedHeader.push(header);
-                            reorderedHeader.push(headerRow[dataRomaneioIndex]);
-                        } else if (colIndex === dataRecebimentoIndex) {
-                            reorderedHeader.push(header);
-                            reorderedHeader.push(headerRow[observacaoIndex]);
-                        } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== observacaoIndex) {
-                            reorderedHeader.push(header);
-                        }
-                    });
-
-                    return reorderedHeader;
-                }
+                if (index === 0) return headerRow;
 
                 let qtde = parseFloat(row[qtdeIndex]?.toString().replace(",", ".")) || 0;
                 let pesoKg = parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")) || 0;
@@ -490,40 +462,11 @@
                     }
                 });
 
-                let reorderedRow = [];
-                row.forEach((cell, colIndex) => {
-                    if (colIndex === pesoUnitarioIndex) {
-                        reorderedRow.push(cell);
-                        if (pesoKgIndex !== undefined) {
-                            reorderedRow.push(row[pesoKgIndex]);
-                        }
-                    } else if (colIndex === areaM2UnitarioIndex) {
-                        reorderedRow.push(cell);
-                        if (areaSuperficieIndex !== undefined) {
-                            reorderedRow.push(row[areaSuperficieIndex]);
-                        }
-                    } else if (colIndex === statusIndex) {
-                        reorderedRow.push(cell);
-                        reorderedRow.push(row[dataRomaneioIndex]);
-                    } else if (colIndex === dataRecebimentoIndex) {
-                        reorderedRow.push(cell);
-                        reorderedRow.push(row[observacaoIndex]);
-                    } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== observacaoIndex) {
-                        reorderedRow.push(cell);
-                    }
-                });
-
-                return reorderedRow;
+                return row;
             });
 
             const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
-
-            updatedSheet["!cols"] = newData[0].map((_, index) => {
-                let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
-                return { wch: maxLength + 2 };
-            });
-
-                        const newWorkbook = XLSX.utils.book_new();
+            const newWorkbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
             XLSX.writeFile(newWorkbook, "romaneio.xlsx");
         }
