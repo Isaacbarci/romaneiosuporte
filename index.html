@@ -416,117 +416,114 @@
             }
         }
 
-        function downloadExcel() {
-            if (!data.length) {
-                alert("Nenhum dado carregado para exportar.");
-                return;
-            }
+       function downloadExcel() {
+    if (!data.length) {
+        alert("Nenhum dado carregado para exportar.");
+        return;
+    }
 
+    let headerRow = [...data[0]];
+    let pesoKgIndex = columnIndexes["peso (kg)"];
+    let areaSuperficieIndex = columnIndexes["área superfície"];
+    let pesoUnitarioIndex = columnIndexes["peso unitário"];
+    let areaM2UnitarioIndex = columnIndexes["area m² unitário"];
+    let qtdeIndex = columnIndexes["qtde"];
+    let dataRomaneioIndex = columnIndexes["data do romaneio"];
+    let statusIndex = columnIndexes["status"];
+    let observacaoIndex = columnIndexes["observação"];
+    let dataRecebimentoIndex = columnIndexes["data recebimento"];
 
-
-            let headerRow = [...data[0]];
-            let pesoKgIndex = columnIndexes["peso (kg)"];
-            let areaSuperficieIndex = columnIndexes["área superfície"];
-            let pesoUnitarioIndex = columnIndexes["peso unitário"];
-            let areaM2UnitarioIndex = columnIndexes["area m² unitário"];
-            let qtdeIndex = columnIndexes["qtde"];
-            let dataRomaneioIndex = columnIndexes["data do romaneio"];
-            let statusIndex = columnIndexes["status"];
-            let observacaoIndex = columnIndexes["observação"];
-            let dataRecebimentoIndex = columnIndexes["data recebimento"];
-
-            let newData = data.map((row, index) => {
-                if (index === 0) {
-
-                    let reorderedHeader = [];
-                    headerRow.forEach((header, colIndex) => {
-                        if (colIndex === pesoUnitarioIndex) {
-                            reorderedHeader.push(header);
-                            if (pesoKgIndex !== undefined) {
-                                reorderedHeader.push("PESO TOTAL");
-                            }
-                        } else if (colIndex === areaM2UnitarioIndex) {
-                            reorderedHeader.push(header);
-                            if (areaSuperficieIndex !== undefined) {
-                                reorderedHeader.push("ÁREA M² TOTAL");
-                            }
-                        } else if (colIndex === statusIndex) {
-                            reorderedHeader.push(header);
-                            reorderedHeader.push(headerRow[dataRomaneioIndex]);
-                        } else if (colIndex === dataRecebimentoIndex) {
-                            reorderedHeader.push(header);
-                            reorderedHeader.push(headerRow[observacaoIndex]);
-                        } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== observacaoIndex) {
-                            reorderedHeader.push(header);
-                        }
-                    });
-
-                    return reorderedHeader;
-                }
-
-                let qtde = parseFloat(row[qtdeIndex]?.toString().replace(",", ".")) || 0;
-                let pesoKg = parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")) || 0;
-                let areaSuperficie = parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")) || 0;
-
-                if (qtde > 0) {
-                    row[pesoUnitarioIndex] = (pesoKg / qtde).toFixed(2).replace(".", ",");
-                    row[areaM2UnitarioIndex] = (areaSuperficie / qtde).toFixed(2).replace(".", ",");
-                } else {
-                    row[pesoUnitarioIndex] = "0,00";
-                    row[areaM2UnitarioIndex] = "0,00";
-                }
-
-                row[pesoKgIndex] = row[pesoKgIndex]?.toString().replace(".", ",");
-                row[areaSuperficieIndex] = row[areaSuperficieIndex]?.toString().replace(".", ",");
-
-                Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
-                    if (colName.includes("data") && colName !== "data cadastro") {
-                        let dateValue = row[colIndex];
-                        if (dateValue && !isNaN(new Date(dateValue))) {
-                            let dateObj = new Date(dateValue);
-                            dateObj.setDate(dateObj.getDate() + 1);
-                            row[colIndex] = dateObj.toLocaleDateString("pt-BR");
-                        }
+    let newData = data.map((row, index) => {
+        if (index === 0) {
+            let reorderedHeader = [];
+            headerRow.forEach((header, colIndex) => {
+                if (colIndex === pesoUnitarioIndex) {
+                    reorderedHeader.push(header);
+                    if (pesoKgIndex !== undefined) {
+                        reorderedHeader.push("PESO TOTAL");
                     }
-                });
-
-                let reorderedRow = [];
-                row.forEach((cell, colIndex) => {
-                    if (colIndex === pesoUnitarioIndex) {
-                        reorderedRow.push(cell);
-                        if (pesoKgIndex !== undefined) {
-                            reorderedRow.push(row[pesoKgIndex]);
-                        }
-                    } else if (colIndex === areaM2UnitarioIndex) {
-                        reorderedRow.push(cell);
-                        if (areaSuperficieIndex !== undefined) {
-                            reorderedRow.push(row[areaSuperficieIndex]);
-                        }
-                    } else if (colIndex === statusIndex) {
-                        reorderedRow.push(cell);
-                        reorderedRow.push(row[dataRomaneioIndex]);
-                    } else if (colIndex === dataRecebimentoIndex) {
-                        reorderedRow.push(cell);
-                        reorderedRow.push(row[observacaoIndex]);
-                    } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== observacaoIndex) {
-                        reorderedRow.push(cell);
+                } else if (colIndex === areaM2UnitarioIndex) {
+                    reorderedHeader.push(header);
+                    if (areaSuperficieIndex !== undefined) {
+                        reorderedHeader.push("ÁREA M² TOTAL");
                     }
-                });
-
-                return reorderedRow;
+                } else if (colIndex === statusIndex) {
+                    reorderedHeader.push(header);
+                    reorderedHeader.push(headerRow[dataRomaneioIndex]);
+                } else if (colIndex === dataRecebimentoIndex) {
+                    reorderedHeader.push(header);
+                    reorderedHeader.push(headerRow[observacaoIndex]);
+                } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== observacaoIndex) {
+                    reorderedHeader.push(header);
+                }
             });
 
-            const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
-
-            updatedSheet["!cols"] = newData[0].map((_, index) => {
-                let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
-                return { wch: maxLength + 2 };
-            });
-
-                        const newWorkbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
-            XLSX.writeFile(newWorkbook, "romaneio.xlsx");
+            return reorderedHeader;
         }
+
+        let qtde = parseFloat(row[qtdeIndex]?.toString().replace(",", ".")) || 0;
+        let pesoKg = parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")) || 0;
+        let areaSuperficie = parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")) || 0;
+
+        if (qtde > 0) {
+            row[pesoUnitarioIndex] = (pesoKg / qtde).toFixed(2).replace(".", ",").toString();
+            row[areaM2UnitarioIndex] = (areaSuperficie / qtde).toFixed(2).replace(".", ",").toString();
+        } else {
+            row[pesoUnitarioIndex] = "0,00";
+            row[areaM2UnitarioIndex] = "0,00";
+        }
+
+        row[pesoKgIndex] = row[pesoKgIndex]?.toString().replace(".", ",");
+        row[areaSuperficieIndex] = row[areaSuperficieIndex]?.toString().replace(".", ",");
+
+        Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
+            if (colName.includes("data") && colName !== "data cadastro") {
+                let dateValue = row[colIndex];
+                if (dateValue && !isNaN(new Date(dateValue))) {
+                    let dateObj = new Date(dateValue);
+                    dateObj.setDate(dateObj.getDate() + 1);
+                    row[colIndex] = dateObj.toLocaleDateString("pt-BR");
+                }
+            }
+        });
+
+        let reorderedRow = [];
+        row.forEach((cell, colIndex) => {
+            if (colIndex === pesoUnitarioIndex) {
+                reorderedRow.push(cell);
+                if (pesoKgIndex !== undefined) {
+                    reorderedRow.push(row[pesoKgIndex].toString());
+                }
+            } else if (colIndex === areaM2UnitarioIndex) {
+                reorderedRow.push(cell);
+                if (areaSuperficieIndex !== undefined) {
+                    reorderedRow.push(row[areaSuperficieIndex].toString());
+                }
+            } else if (colIndex === statusIndex) {
+                reorderedRow.push(cell);
+                reorderedRow.push(row[dataRomaneioIndex]);
+            } else if (colIndex === dataRecebimentoIndex) {
+                reorderedRow.push(cell);
+                reorderedRow.push(row[observacaoIndex]);
+            } else if (colIndex !== pesoKgIndex && colIndex !== areaSuperficieIndex && colIndex !== dataRomaneioIndex && colIndex !== observacaoIndex) {
+                reorderedRow.push(cell);
+            }
+        });
+
+        return reorderedRow;
+    });
+
+    const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
+
+    updatedSheet["!cols"] = newData[0].map((_, index) => {
+        let maxLength = Math.max(...newData.map(row => (row[index] ? row[index].toString().length : 0)));
+        return { wch: maxLength + 2 };
+    });
+
+    const newWorkbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
+    XLSX.writeFile(newWorkbook, "romaneio.xlsx");
+}
 
         document.addEventListener("DOMContentLoaded", () => {
             const storedData = localStorage.getItem("uploadedData");
