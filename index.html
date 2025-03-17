@@ -435,11 +435,17 @@
     let statusIndex = columnIndexes["status"];
     let observacaoIndex = columnIndexes["observação"];
     let dataRecebimentoIndex = columnIndexes["data recebimento"];
+    let dataCadastroIndex = columnIndexes["data cadastro"]; // Índice da coluna "DATA CADASTRO"
 
     let newData = data.map((row, index) => {
         if (index === 0) {
             let reorderedHeader = [];
             headerRow.forEach((header, colIndex) => {
+                // Pular a coluna "DATA CADASTRO"
+                if (colIndex === dataCadastroIndex) {
+                    return;
+                }
+
                 if (colIndex === pesoUnitarioIndex) {
                     reorderedHeader.push(header);
                     if (pesoKgIndex !== undefined) {
@@ -508,9 +514,14 @@
             }
         });
 
-        // Reordenar as colunas
+        // Reordenar as colunas (pular a coluna "DATA CADASTRO")
         let reorderedRow = [];
         row.forEach((cell, colIndex) => {
+            // Pular a coluna "DATA CADASTRO"
+            if (colIndex === dataCadastroIndex) {
+                return;
+            }
+
             if (colIndex === pesoUnitarioIndex) {
                 reorderedRow.push(cell !== undefined ? cell : ""); // Mantém vazio
                 if (pesoKgIndex !== undefined) {
