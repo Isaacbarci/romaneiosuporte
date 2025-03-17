@@ -428,6 +428,9 @@
     let pesoUnitarioIndex = columnIndexes["peso unitário"];
     let areaM2UnitarioIndex = columnIndexes["area m² unitário"];
     let qtdeIndex = columnIndexes["qtde"];
+    let qtdeEnviadaIndex = columnIndexes["qtde enviada"];
+    let saldoIndex = columnIndexes["saldo"];
+    let qtdEnviadaIndex = columnIndexes["qtd enviada"];
     let dataRomaneioIndex = columnIndexes["data do romaneio"];
     let statusIndex = columnIndexes["status"];
     let observacaoIndex = columnIndexes["observação"];
@@ -461,21 +464,31 @@
             return reorderedHeader;
         }
 
+        // Converter valores para números
         let qtde = parseFloat(row[qtdeIndex]?.toString().replace(",", ".")) || 0;
+        let qtdeEnviada = parseFloat(row[qtdeEnviadaIndex]?.toString().replace(",", ".")) || 0;
+        let saldo = parseFloat(row[saldoIndex]?.toString().replace(",", ".")) || 0;
+        let qtdEnviada = parseFloat(row[qtdEnviadaIndex]?.toString().replace(",", ".")) || 0;
         let pesoKg = parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")) || 0;
         let areaSuperficie = parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")) || 0;
 
+        // Atualizar valores das colunas
         if (qtde > 0) {
-            row[pesoUnitarioIndex] = parseFloat((pesoKg / qtde).toFixed(2)); // Converter para número
-            row[areaM2UnitarioIndex] = parseFloat((areaSuperficie / qtde).toFixed(2)); // Converter para número
+            row[pesoUnitarioIndex] = parseFloat((pesoKg / qtde).toFixed(2)); // Número
+            row[areaM2UnitarioIndex] = parseFloat((areaSuperficie / qtde).toFixed(2)); // Número
         } else {
             row[pesoUnitarioIndex] = 0.00; // Número
             row[areaM2UnitarioIndex] = 0.00; // Número
         }
 
-        row[pesoKgIndex] = parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")); // Converter para número
-        row[areaSuperficieIndex] = parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")); // Converter para número
+        row[pesoKgIndex] = parseFloat(row[pesoKgIndex]?.toString().replace(",", ".")); // Número
+        row[areaSuperficieIndex] = parseFloat(row[areaSuperficieIndex]?.toString().replace(",", ".")); // Número
+        row[qtdeIndex] = qtde; // Número
+        row[qtdeEnviadaIndex] = qtdeEnviada; // Número
+        row[saldoIndex] = saldo; // Número
+        row[qtdEnviadaIndex] = qtdEnviada; // Número
 
+        // Formatar datas
         Object.entries(columnIndexes).forEach(([colName, colIndex]) => {
             if (colName.includes("data") && colName !== "data cadastro") {
                 let dateValue = row[colIndex];
@@ -487,6 +500,7 @@
             }
         });
 
+        // Reordenar as colunas
         let reorderedRow = [];
         row.forEach((cell, colIndex) => {
             if (colIndex === pesoUnitarioIndex) {
@@ -513,6 +527,7 @@
         return reorderedRow;
     });
 
+    // Criar o arquivo Excel
     const updatedSheet = XLSX.utils.aoa_to_sheet(newData);
 
     updatedSheet["!cols"] = newData[0].map((_, index) => {
