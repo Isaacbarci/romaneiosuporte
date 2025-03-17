@@ -125,7 +125,6 @@
         .edited-row {
             background-color: darkgray !important;
 
-        }
 
            .saldo-negativo {
             color: red;
@@ -169,7 +168,7 @@
         <table id="dataTable"></table>
     </div>
 
-    <div id="editModal" class="modal">
+   <div id="editModal" class="modal">
         <input type="hidden" id="editIndex">
         <label>Posição / TAG: <input type="text" id="POSICAOTAG" readonly></label>
         <label>Identificação 1: <input type="text" id="IDENTIFICACAO1" readonly></label>
@@ -348,7 +347,7 @@
             table.appendChild(fragment);
         }
 
-        function openEditModal(index) {
+          function openEditModal(index) {
             if (index < 0 || index >= data.length) return;
 
             document.getElementById("editIndex").value = index;
@@ -361,7 +360,19 @@
             document.getElementById("QTDENVIADA").value = data[index][columnIndexes["qtd enviada"]] || "";
             document.getElementById("OBSROMANEIO").value = data[index][columnIndexes["obs romaneio"]] || "";
             document.getElementById("Qtde").value = data[index][columnIndexes["qtde"]] || "";
-            document.getElementById("Saldo").value = data[index][columnIndexes["saldo"]] || "";
+
+            const saldo = data[index][columnIndexes["saldo"]] || 0;
+            const saldoInput = document.getElementById("Saldo");
+            saldoInput.value = saldo;
+
+            // Aplicar estilo com base no valor do saldo
+            if (saldo <= 0) {
+                saldoInput.classList.remove("saldo-positivo");
+                saldoInput.classList.add("saldo-negativo");
+            } else {
+                saldoInput.classList.remove("saldo-negativo");
+                saldoInput.classList.add("saldo-positivo");
+            }
 
             document.getElementById("editModal").style.display = "block";
         }
