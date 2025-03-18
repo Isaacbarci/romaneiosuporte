@@ -287,10 +287,14 @@ function storeDataLocally() {
 
 
 
-        function applyFilter() {
+     function applyFilter() {
     const filterValue = document.getElementById("identificacaoFilter").value.trim().toLowerCase();
 
-    // Verifica se as colunas "QR" e "Identificação 1" existem
+    if (!data.length) {
+        console.warn("Nenhum dado carregado para filtrar.");
+        return;
+    }
+
     const qrColumnIndex = columnIndexes["qr"];
     const identificacao1Index = columnIndexes["identificação 1"];
 
@@ -299,17 +303,16 @@ function storeDataLocally() {
         return;
     }
 
-    // Filtra os dados com base no valor do filtro
     filteredData = data.slice(1).filter(row => {
-        const qrValue = String(row[qrColumnIndex]).toLowerCase();
-        const identificacao1Value = String(row[identificacao1Index]).toLowerCase();
-
-        // Retorna true se o valor do filtro estiver presente em qualquer uma das colunas
+        const qrValue = String(row[qrColumnIndex] || "").toLowerCase();
+        const identificacao1Value = String(row[identificacao1Index] || "").toLowerCase();
         return qrValue.includes(filterValue) || identificacao1Value.includes(filterValue);
     });
 
+    console.log("Filtro aplicado:", filterValue);
     renderTable();
 }
+
 
         function renderTable() {
             const table = document.getElementById("dataTable");
