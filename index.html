@@ -275,7 +275,17 @@
             data[0].forEach((header, index) => {
                 columnIndexes[header.trim().toLowerCase()] = index;
             });
+
+
         }
+
+function storeDataLocally() {
+    localStorage.setItem("uploadedData", JSON.stringify(data));
+    localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
+    console.log("Dados armazenados localmente.");
+}
+
+
 
         function applyFilter() {
     const filterValue = document.getElementById("identificacaoFilter").value.trim().toLowerCase();
@@ -388,26 +398,20 @@
         }
 
         function saveEdit() {
-            const originalIndex = parseInt(document.getElementById("editIndex").value);
-            if (originalIndex < 0 || originalIndex >= data.length) return;
+    const originalIndex = parseInt(document.getElementById("editIndex").value);
+    if (originalIndex < 0 || originalIndex >= data.length) return;
 
-            data[originalIndex][columnIndexes["data do romaneio"]] = document.getElementById("DATADOROMANEIO").value;
-            data[originalIndex][columnIndexes["qtd enviada"]] = document.getElementById("QTDENVIADA").value;
-            data[originalIndex][columnIndexes["obs romaneio"]] = document.getElementById("OBSROMANEIO").value;
+    data[originalIndex][columnIndexes["data do romaneio"]] = document.getElementById("DATADOROMANEIO").value;
+    data[originalIndex][columnIndexes["qtd enviada"]] = document.getElementById("QTDENVIADA").value;
+    data[originalIndex][columnIndexes["obs romaneio"]] = document.getElementById("OBSROMANEIO").value;
 
-            const dataRomaneio = document.getElementById("DATADOROMANEIO").value;
-            if (!dataRomaneio) {
-                editedRows.delete(originalIndex);
-            } else {
-                editedRows.add(originalIndex);
-            }
+    editedRows.add(originalIndex);
+    storeDataLocally(); // Salvar no localStorage assim que editar
 
-            localStorage.setItem("uploadedData", JSON.stringify(data));
-            localStorage.setItem("editedRows", JSON.stringify(Array.from(editedRows)));
+    closeModal();
+    renderTable();
+}
 
-            document.getElementById("editModal").style.display = "none";
-            renderTable();
-        }
 
         function closeModal() {
             document.getElementById("editModal").style.display = "none";
@@ -590,34 +594,24 @@
     XLSX.utils.book_append_sheet(newWorkbook, updatedSheet, "Planilha1");
     XLSX.writeFile(newWorkbook, "Romaneio_Suporte.xlsx");
 }
+document.addEventListener("DOMContentLoaded", () => {
+    const storedData = localStorage.getItem("uploadedData");
+    if (storedData) {
+        try {
+            data = JSON.parse(storedData);
+            filteredData = data.slice(1);
+            findColumnIndexes();
+            renderTable();
+            console.log("Dados carregados do localStorage.");
+        } catch (error) {
+            console.error("Erro ao carregar dados do localStorage:", error);
+            localStorage.removeItem("uploadedData");
+        }
+    } else {
+        console.log("Nenhum dado encontrado no localStorage.");
+    }
+});
 
-        document.addEventListener("DOMContentLoaded", () => {
-            const storedData = localStorage.getItem("uploadedData");
-            if (storedData) {
-                try {
-                    data = JSON.parse(storedData);
-                    filteredData = data.slice(1);
-                    findColumnIndexes();
-                } catch (error) {
-                    console.error("Erro ao carregar os dados armazenados:", error);
-                    localStorage.removeItem("uploadedData");
-                }
-            }
-
-            const storedEditedRows = localStorage.getItem("editedRows");
-            if (storedEditedRows) {
-                try {
-                    editedRows = new Set(JSON.parse(storedEditedRows));
-                } catch (error) {
-                    console.error("Erro ao carregar as edições armazenadas:", error);
-                    localStorage.removeItem("editedRows");
-                }
-            }
-
-            if (data.length) {
-                renderTable();
-            }
-        });
     </script>
 </body>
 </html>
